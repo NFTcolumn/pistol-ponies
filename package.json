@@ -1,0 +1,29 @@
+{
+  "name": "pistol-ponies",
+  "version": "1.0.0",
+  "description": "2D Online Multiplayer FPS Shooter",
+  "main": "server/server.js",
+  "scripts": {
+    "server": "node server/server.js",
+    "client": "vite --host",
+    "dev": "concurrently \"pnpm run server\" \"pnpm run client\""
+  },
+  "keywords": [
+    "game",
+    "multiplayer",
+    "fps",
+    "2d",
+    "shooter"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.182.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "http-server": "^14.1.1",
+    "vite": "^7.3.1"
+  }
+}

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pistol Ponies - 2D Online FPS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <!-- Menu Screen -->
+  <div id="menu">
+    <!-- Main Menu -->
+    <div id="mainMenu" class="menu-screen">
+      <div class="menu-container">
+        <div class="logo-container">
+          <img src="/logo.png" alt="Pistol Ponies Logo" class="game-logo">
+        </div>
+        <p class="game-subtitle">2D Online Multiplayer Shooter</p>
+
+        <div class="menu-content">
+          <!-- Wallet Connection Section (DISABLED FOR NOW) -->
+          <div id="walletSection" class="wallet-section" style="display: none;">
+            <div id="walletNotConnected">
+              <p class="wallet-label">🔐 Connect wallet to play</p>
+              <select id="chainSelect" class="chain-select">
+                <option value="8453">Base</option>
+                <option value="56">BNB Chain</option>
+                <option value="137">Polygon</option>
+                <option value="42220">Celo</option>
+              </select>
+              <button id="connectWalletBtn" class="btn btn-wallet">
+                <span>🦊 Connect Wallet</span>
+              </button>
+            </div>
+            <div id="walletConnected" style="display: none;">
+              <p class="wallet-address" id="walletAddressDisplay">0x1234...5678</p>
+              <p class="wallet-chain" id="walletChainDisplay">Base</p>
+              <p class="wallet-status" id="walletStatus">Checking PONY balance...</p>
+              <button id="disconnectWalletBtn" class="btn btn-secondary btn-small">Disconnect</button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="playerName">Player Name</label>
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+          </div>
+
+          <button id="playButton" class="btn btn-primary">
+            <span>🎮 PLAY NOW</span>
+          </button>
+
+          <button id="settingsButton" class="btn btn-secondary">
+            <span>⚙️ SETTINGS</span>
+          </button>
+        </div>
+
+        <div class="menu-footer">
+          <p>Controls: WASD/Arrows to move (Double tap to DASH), SPACE to jump, Mouse to aim, Click to shoot, Q/R to
+            reload</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lobby Screen -->
+    <div id="lobbyScreen" class="menu-screen" style="display: none;">
+      <div class="menu-container">
+        <h2>Waiting for Players...</h2>
+        <div class="lobby-content">
+          <div id="playerList" class="player-list">
+            <!-- Players will be added here dynamically -->
+          </div>
+          <div class="lobby-status">
+            <div class="spinner"></div>
+            <p>Connecting to server...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settingsScreen" class="menu-screen" style="display: none;">
+      <div class="menu-container">
+        <h2>Settings</h2>
+        <div class="settings-content">
+          <div class="input-group">
+            <label for="floorTexture">Floor Texture</label>
+            <select id="floorTexture" class="btn btn-secondary">
+              <option value="">Solid Color</option>
+              <option value="/assets/textures/concrete.png">Concrete</option>
+              <option value="/assets/textures/tiles.png">Sci-Fi Tiles</option>
+            </select>
+          </div>
+          <button id="soundToggle" class="btn btn-secondary">Sound: ON</button>
+          <button id="mobileSettingsButton" class="btn btn-secondary">📱 Mobile Controls</button>
+          <button id="backButton" class="btn btn-secondary">← Back to Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Canvas -->
+  <canvas id="gameCanvas" style="display: none;"></canvas>
+  <!-- UI Canvas -->
+  <canvas id="uiCanvas" style="display: none; pointer-events: none;"></canvas>
+
+  <!-- Load Game -->
+  <script type="module" src="/js/engine/Game.js"></script>
+</body>
+
+</html>
