@@ -6,6 +6,7 @@
   "scripts": {
     "server": "node server/server.js",
     "client": "vite --host",
+    "build": "vite build",
     "dev": "concurrently \"pnpm run server\" \"pnpm run client\""
   },
   "keywords": [

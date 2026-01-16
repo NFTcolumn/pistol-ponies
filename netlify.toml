@@ -2,8 +2,8 @@
 # This builds the Vite project and deploys the static files
 
 [build]
-  # Build command - uses npm since pnpm may not be available on Netlify
-  command = "npm install && npm run build"
+  # Build command - uses pnpm
+  command = "pnpm install && pnpm run build"
   
   # Directory to publish (Vite outputs to 'dist' by default)
   publish = "dist"
