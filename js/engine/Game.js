@@ -291,13 +291,13 @@ export class Game {
                 ? this.mobileControls.getMovementVector()
                 : null;
 
-            // Get gyro aim delta
-            const gyroDelta = this.mobileControls.getGyroAimDelta();
+            // Get touch aim delta
+            const aimDelta = this.mobileControls.getAimDelta();
 
-            if (joystickMove || gyroDelta) {
+            if (joystickMove || aimDelta) {
                 mobileOverrides = {
                     movement: joystickMove,
-                    aimDelta: gyroDelta
+                    aimDelta: aimDelta
                 };
             }
 

@@ -17,11 +17,14 @@ export class MobileControls {
         this.joystickCenter = { x: 0, y: 0 };
         this.joystickRadius = 60;
 
-        // Gyro aiming
-        this.gyroEnabled = false;
-        this.gyroAim = { x: 0, y: 0 };
-        this.lastGyro = { alpha: 0, beta: 0, gamma: 0 };
-        this.gyroCalibration = { alpha: 0, beta: 0, gamma: 0 };
+        // Touch aiming (replaces gyro)
+        this.aimTouch = null;
+        this.aimDelta = { x: 0, y: 0 };
+        this.lastAimPos = { x: 0, y: 0 };
+
+        // Double tap to shoot
+        this.lastTapTime = 0;
+        this.doubleTapThreshold = 300; // ms
 
         // Settings (saved to localStorage)
         this.settings = this.loadSettings();
@@ -64,7 +67,7 @@ export class MobileControls {
         this.enabled = true;
         this.createUI();
         this.setupEventListeners();
-        this.initGyro();
+        this.setupTouchAim();
     }
 
     createUI() {
@@ -85,8 +88,7 @@ export class MobileControls {
         // Create joystick
         this.createJoystick();
 
-        // Create buttons
-        this.createButton('shoot', '🔫', this.settings.shootPosition);
+        // Create buttons - keep only jump and reload, shoot is now double-tap
         this.createButton('jump', '⬆️', this.settings.jumpPosition);
         this.createButton('reload', '🔄', this.settings.reloadPosition);
 
@@ -241,92 +243,89 @@ export class MobileControls {
         }
     }
 
-    initGyro() {
-        // Request permission for device motion (required on iOS 13+)
-        if (typeof DeviceOrientationEvent !== 'undefined' &&
-            typeof DeviceOrientationEvent.requestPermission === 'function') {
-            // iOS 13+ requires user gesture to request permission
-            // We'll add a button to request it
-            this.createGyroPermissionButton();
-        } else {
-            // Android and older devices - just enable
-            this.enableGyro();
-        }
+    setupTouchAim() {
+        // Touch aim zone covers right 60% of screen (left is for joystick)
+        // Double tap anywhere on right side to shoot
+        const gameCanvas = document.getElementById('gameCanvas');
+        if (!gameCanvas) return;
+
+        // We'll listen on the document for touches not on controls
+        document.addEventListener('touchstart', (e) => this.onAimTouchStart(e), { passive: false });
+        document.addEventListener('touchmove', (e) => this.onAimTouchMove(e), { passive: false });
+        document.addEventListener('touchend', (e) => this.onAimTouchEnd(e), { passive: false });
     }
 
-    createGyroPermissionButton() {
-        const btn = document.createElement('div');
-        btn.id = 'gyroPermBtn';
-        btn.style.cssText = `
-            position: fixed;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 107, 157, 0.9);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            pointer-events: auto;
-            z-index: 1002;
-        `;
-        btn.textContent = '📱 Enable Gyro Aim';
+    isOnControl(touch) {
+        // Check if touch is on joystick or buttons
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (!el) return false;
+        return el.closest('.mobile-joystick-base') ||
+            el.closest('.mobile-btn') ||
+            el.closest('.mobile-stat-btn') ||
+            el.closest('#mobileSettingsModal');
+    }
 
-        btn.addEventListener('touchstart', async (e) => {
-            e.preventDefault();
-            try {
-                const permission = await DeviceOrientationEvent.requestPermission();
-                if (permission === 'granted') {
-                    this.enableGyro();
-                    btn.remove();
+    onAimTouchStart(e) {
+        if (!this.enabled || this.game.gameState !== 'playing') return;
+
+        for (const touch of e.changedTouches) {
+            // Skip if on a control
+            if (this.isOnControl(touch)) continue;
+
+            // Check if this is in the right ~60% of screen (aim zone)
+            if (touch.clientX > window.innerWidth * 0.35) {
+                // Check for double tap
+                const now = Date.now();
+                if (now - this.lastTapTime < this.doubleTapThreshold) {
+                    // Double tap = shoot!
+                    this.shootHeld = true;
+                    setTimeout(() => { this.shootHeld = false; }, 100);
                 }
-            } catch (err) {
-                console.error('Gyro permission error:', err);
+                this.lastTapTime = now;
+
+                // Start aim tracking
+                if (this.aimTouch === null) {
+                    this.aimTouch = touch.identifier;
+                    this.lastAimPos = { x: touch.clientX, y: touch.clientY };
+                    e.preventDefault();
+                }
             }
-        }, { passive: false });
-
-        this.container.appendChild(btn);
-    }
-
-    enableGyro() {
-        this.gyroEnabled = true;
-        window.addEventListener('deviceorientation', (e) => this.onDeviceOrientation(e));
-        // Calibrate on first reading
-        this.gyroNeedsCalibration = true;
-    }
-
-    onDeviceOrientation(e) {
-        if (!this.gyroEnabled) return;
-
-        // Calibrate on first use
-        if (this.gyroNeedsCalibration) {
-            this.gyroCalibration = { alpha: e.alpha || 0, beta: e.beta || 0, gamma: e.gamma || 0 };
-            this.lastGyro = { ...this.gyroCalibration };
-            this.gyroNeedsCalibration = false;
-            return;
         }
-
-        // Calculate delta from calibration
-        const alpha = e.alpha || 0;
-        const beta = e.beta || 0;
-        const gamma = e.gamma || 0;
-
-        // Gamma controls horizontal aim (left/right tilt)
-        // Beta controls vertical aim (forward/back tilt)
-        const deltaX = (gamma - this.lastGyro.gamma) * 0.5; // Yaw (horizontal)
-        const deltaY = (beta - this.lastGyro.beta) * 0.3; // Pitch (vertical)
-
-        this.gyroAim.x = deltaX;
-        this.gyroAim.y = deltaY;
-
-        this.lastGyro = { alpha, beta, gamma };
     }
 
-    getGyroAimDelta() {
-        if (!this.gyroEnabled) return null;
-        const delta = { x: this.gyroAim.x, y: this.gyroAim.y };
-        this.gyroAim.x = 0;
-        this.gyroAim.y = 0;
+    onAimTouchMove(e) {
+        if (!this.enabled || this.aimTouch === null) return;
+
+        for (const touch of e.changedTouches) {
+            if (touch.identifier === this.aimTouch) {
+                // Calculate delta from last position
+                const deltaX = touch.clientX - this.lastAimPos.x;
+                const deltaY = touch.clientY - this.lastAimPos.y;
+
+                // Accumulate aim delta (will be consumed by getAimDelta)
+                this.aimDelta.x += deltaX;
+                this.aimDelta.y += deltaY;
+
+                this.lastAimPos = { x: touch.clientX, y: touch.clientY };
+                e.preventDefault();
+            }
+        }
+    }
+
+    onAimTouchEnd(e) {
+        for (const touch of e.changedTouches) {
+            if (touch.identifier === this.aimTouch) {
+                this.aimTouch = null;
+            }
+        }
+    }
+
+    getAimDelta() {
+        // Return accumulated aim delta and reset
+        const delta = { x: this.aimDelta.x, y: this.aimDelta.y };
+        this.aimDelta.x = 0;
+        this.aimDelta.y = 0;
+        if (delta.x === 0 && delta.y === 0) return null;
         return delta;
     }
 

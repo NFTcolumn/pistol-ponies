@@ -408,6 +408,61 @@ body {
   }
 }
 
+/* Mobile Landscape - optimize for gaming */
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    /* Handle iOS safe areas */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  .menu-container {
+    padding: 20px 30px;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .logo-container {
+    margin-bottom: 10px;
+  }
+
+  .game-logo {
+    max-width: 120px;
+  }
+
+  .game-subtitle {
+    margin-bottom: 15px;
+    font-size: 12px;
+  }
+
+  .menu-content {
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .menu-footer {
+    padding: 10px;
+  }
+
+  .menu-footer p {
+    font-size: 11px;
+  }
+
+  #gameCanvas,
+  #uiCanvas {
+    /* Ensure full coverage on mobile landscape */
+    width: 100vw !important;
+    height: 100vh !important;
+    min-width: 100vw;
+    min-height: 100vh;
+  }
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {
