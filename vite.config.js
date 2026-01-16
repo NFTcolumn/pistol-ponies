@@ -7,5 +7,14 @@ export default defineConfig({
     },
     build: {
         outDir: 'dist',
+        chunkSizeWarningLimit: 1000, // Increase warning limit to 1MB
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    // Split Three.js into its own chunk for better caching
+                    three: ['three'],
+                },
+            },
+        },
     },
 });
