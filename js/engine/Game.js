@@ -373,11 +373,12 @@ export class Game {
         }
 
         // Check for jump from keyboard, mobile, or gamepad
+        // Use isJumpHeld (not consume) so server variable jump works correctly
         let jumpPressed = this.input.isKeyDown('Space');
-        if (this.mobileControls.enabled && this.mobileControls.consumeJump()) {
+        if (this.mobileControls.enabled && this.mobileControls.isJumpHeld()) {
             jumpPressed = true;
         }
-        if (this.gamepad.consumeJump()) {
+        if (this.gamepad.enabled && this.gamepad.isJumpHeld()) {
             jumpPressed = true;
         }
 

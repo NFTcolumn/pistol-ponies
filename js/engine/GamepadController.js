@@ -203,6 +203,11 @@ export class GamepadController {
         return this.buttons.rb || this.buttons.rt > 0.5;
     }
 
+    // Check if jump is held (for variable jump height)
+    isJumpHeld() {
+        return this.buttons.a;
+    }
+
     // Check if reload is pressed
     isReloadPressed() {
         return this.buttons.lb;

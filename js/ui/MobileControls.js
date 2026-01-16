@@ -471,6 +471,10 @@ export class MobileControls {
         return this.shootHeld;
     }
 
+    isJumpHeld() {
+        return this.jumpPressed;
+    }
+
     consumeJump() {
         if (this.jumpPressed) {
             this.jumpPressed = false;
