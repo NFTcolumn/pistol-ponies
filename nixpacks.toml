@@ -1,0 +1,15 @@
+# Nixpacks configuration for Railway
+# We only need the WebSocket server, not the frontend build
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "pnpm-9_x"]
+
+[phases.install]
+cmds = ["pnpm install --prod"]
+
+# Skip the build phase - we don't need Vite for the server
+[phases.build]
+cmds = []
+
+[start]
+cmd = "node server/server.js"
