@@ -10,11 +10,18 @@ export class MobileControls {
         this.shootHeld = false;
         this.jumpPressed = false;
         this.reloadPressed = false;
+        this.statPressed = null; // For stat allocation
 
         // Touch tracking
         this.joystickTouch = null;
         this.joystickCenter = { x: 0, y: 0 };
         this.joystickRadius = 60;
+
+        // Gyro aiming
+        this.gyroEnabled = false;
+        this.gyroAim = { x: 0, y: 0 };
+        this.lastGyro = { alpha: 0, beta: 0, gamma: 0 };
+        this.gyroCalibration = { alpha: 0, beta: 0, gamma: 0 };
 
         // Settings (saved to localStorage)
         this.settings = this.loadSettings();
@@ -57,6 +64,7 @@ export class MobileControls {
         this.enabled = true;
         this.createUI();
         this.setupEventListeners();
+        this.initGyro();
     }
 
     createUI() {
@@ -81,6 +89,9 @@ export class MobileControls {
         this.createButton('shoot', '🔫', this.settings.shootPosition);
         this.createButton('jump', '⬆️', this.settings.jumpPosition);
         this.createButton('reload', '🔄', this.settings.reloadPosition);
+
+        // Create stat allocation buttons (shown when skill points available)
+        this.createStatButtons();
     }
 
     createJoystick() {
@@ -154,6 +165,169 @@ export class MobileControls {
 
         this.container.appendChild(btn);
         return btn;
+    }
+
+    createStatButtons() {
+        // Create stat button container (hidden by default, shown when skill points available)
+        this.statContainer = document.createElement('div');
+        this.statContainer.id = 'mobileStatButtons';
+        this.statContainer.style.cssText = `
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            flex-direction: row;
+            gap: 8px;
+            z-index: 1001;
+            pointer-events: auto;
+        `;
+
+        const stats = [
+            { key: 'speed', label: 'SPD', emoji: '⚡' },
+            { key: 'health', label: 'HP', emoji: '❤️' },
+            { key: 'ammo', label: 'AMO', emoji: '🎯' },
+            { key: 'jump', label: 'JMP', emoji: '🦘' },
+            { key: 'dash', label: 'DSH', emoji: '💨' },
+            { key: 'aim', label: 'AIM', emoji: '🔭' }
+        ];
+
+        stats.forEach((stat, idx) => {
+            const btn = document.createElement('div');
+            btn.className = 'mobile-stat-btn';
+            btn.dataset.stat = stat.key;
+            btn.style.cssText = `
+                width: 50px;
+                height: 50px;
+                border-radius: 8px;
+                background: rgba(255, 230, 109, 0.7);
+                border: 2px solid rgba(255, 230, 109, 1);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                touch-action: none;
+                user-select: none;
+            `;
+            btn.innerHTML = `<span style="font-size: 16px;">${stat.emoji}</span><span style="font-size: 10px; color: #333;">${stat.label}</span>`;
+
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.statPressed = stat.key;
+                btn.style.transform = 'scale(0.9)';
+            }, { passive: false });
+
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                btn.style.transform = 'scale(1)';
+            }, { passive: false });
+
+            this.statContainer.appendChild(btn);
+        });
+
+        this.container.appendChild(this.statContainer);
+    }
+
+    showStatButtons() {
+        if (this.statContainer) {
+            this.statContainer.style.display = 'flex';
+        }
+    }
+
+    hideStatButtons() {
+        if (this.statContainer) {
+            this.statContainer.style.display = 'none';
+        }
+    }
+
+    initGyro() {
+        // Request permission for device motion (required on iOS 13+)
+        if (typeof DeviceOrientationEvent !== 'undefined' &&
+            typeof DeviceOrientationEvent.requestPermission === 'function') {
+            // iOS 13+ requires user gesture to request permission
+            // We'll add a button to request it
+            this.createGyroPermissionButton();
+        } else {
+            // Android and older devices - just enable
+            this.enableGyro();
+        }
+    }
+
+    createGyroPermissionButton() {
+        const btn = document.createElement('div');
+        btn.id = 'gyroPermBtn';
+        btn.style.cssText = `
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 107, 157, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            pointer-events: auto;
+            z-index: 1002;
+        `;
+        btn.textContent = '📱 Enable Gyro Aim';
+
+        btn.addEventListener('touchstart', async (e) => {
+            e.preventDefault();
+            try {
+                const permission = await DeviceOrientationEvent.requestPermission();
+                if (permission === 'granted') {
+                    this.enableGyro();
+                    btn.remove();
+                }
+            } catch (err) {
+                console.error('Gyro permission error:', err);
+            }
+        }, { passive: false });
+
+        this.container.appendChild(btn);
+    }
+
+    enableGyro() {
+        this.gyroEnabled = true;
+        window.addEventListener('deviceorientation', (e) => this.onDeviceOrientation(e));
+        // Calibrate on first reading
+        this.gyroNeedsCalibration = true;
+    }
+
+    onDeviceOrientation(e) {
+        if (!this.gyroEnabled) return;
+
+        // Calibrate on first use
+        if (this.gyroNeedsCalibration) {
+            this.gyroCalibration = { alpha: e.alpha || 0, beta: e.beta || 0, gamma: e.gamma || 0 };
+            this.lastGyro = { ...this.gyroCalibration };
+            this.gyroNeedsCalibration = false;
+            return;
+        }
+
+        // Calculate delta from calibration
+        const alpha = e.alpha || 0;
+        const beta = e.beta || 0;
+        const gamma = e.gamma || 0;
+
+        // Gamma controls horizontal aim (left/right tilt)
+        // Beta controls vertical aim (forward/back tilt)
+        const deltaX = (gamma - this.lastGyro.gamma) * 0.5; // Yaw (horizontal)
+        const deltaY = (beta - this.lastGyro.beta) * 0.3; // Pitch (vertical)
+
+        this.gyroAim.x = deltaX;
+        this.gyroAim.y = deltaY;
+
+        this.lastGyro = { alpha, beta, gamma };
+    }
+
+    getGyroAimDelta() {
+        if (!this.gyroEnabled) return null;
+        const delta = { x: this.gyroAim.x, y: this.gyroAim.y };
+        this.gyroAim.x = 0;
+        this.gyroAim.y = 0;
+        return delta;
     }
 
     setupEventListeners() {
@@ -310,6 +484,15 @@ export class MobileControls {
         if (this.reloadPressed) {
             this.reloadPressed = false;
             return true;
+        }
+        return false;
+    }
+
+    consumeStat() {
+        if (this.statPressed) {
+            const stat = this.statPressed;
+            this.statPressed = null;
+            return stat;
         }
         return false;
     }

@@ -33,22 +33,37 @@ export class Player {
         this.mesh = null; // Will be assigned by Game/Renderer
     }
 
-    update(deltaTime, input) {
+    update(deltaTime, input, mobileOverrides = null) {
         if (!this.alive) return;
 
         this.weapon.update(Date.now());
 
-        // Update rotation based on mouse movement
+        // Update rotation based on mouse movement or mobile gyro
         const mouseSensitivity = 0.002;
-        this.angle += input.mouse.movementX * mouseSensitivity;
-        this.pitch -= input.mouse.movementY * mouseSensitivity;
+
+        if (mobileOverrides && mobileOverrides.aimDelta) {
+            // Mobile gyro aim
+            this.angle += mobileOverrides.aimDelta.x * mouseSensitivity * 2;
+            this.pitch -= mobileOverrides.aimDelta.y * mouseSensitivity * 2;
+        } else {
+            // Desktop mouse aim
+            this.angle += input.mouse.movementX * mouseSensitivity;
+            this.pitch -= input.mouse.movementY * mouseSensitivity;
+        }
 
         // Clamp pitch
         const maxPitch = Math.PI / 2 - 0.1;
         this.pitch = Math.max(-maxPitch, Math.min(maxPitch, this.pitch));
 
         // Get movement input (relative to player angle)
-        const moveInput = input.getMovementVector();
+        let moveInput;
+        if (mobileOverrides && mobileOverrides.movement) {
+            // Mobile joystick
+            moveInput = mobileOverrides.movement;
+        } else {
+            // Desktop keyboard
+            moveInput = input.getMovementVector();
+        }
 
         // Calculate world-space velocity based on local input and player angle
         // Forward is -Z in Three.js, but on our 2D server Y is depth.

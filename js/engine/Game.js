@@ -283,8 +283,43 @@ export class Game {
     update(deltaTime) {
         if (this.gameState !== 'playing' || !this.localPlayer) return;
 
-        // Player logic
-        this.localPlayer.update(deltaTime, this.input);
+        // Build mobile overrides for Player
+        let mobileOverrides = null;
+        if (this.mobileControls.enabled) {
+            // Get movement from joystick
+            const joystickMove = this.mobileControls.joystick.active
+                ? this.mobileControls.getMovementVector()
+                : null;
+
+            // Get gyro aim delta
+            const gyroDelta = this.mobileControls.getGyroAimDelta();
+
+            if (joystickMove || gyroDelta) {
+                mobileOverrides = {
+                    movement: joystickMove,
+                    aimDelta: gyroDelta
+                };
+            }
+
+            // Show/hide stat buttons based on available skill points
+            if (this.localPlayer.skillPoints > 0) {
+                this.mobileControls.showStatButtons();
+            } else {
+                this.mobileControls.hideStatButtons();
+            }
+
+            // Handle mobile stat allocation
+            const statToAllocate = this.mobileControls.consumeStat();
+            if (statToAllocate && this.localPlayer.skillPoints > 0) {
+                this.network.send({
+                    type: 'allocateStat',
+                    stat: statToAllocate
+                });
+            }
+        }
+
+        // Player logic - pass mobile overrides
+        this.localPlayer.update(deltaTime, this.input, mobileOverrides);
 
         this.renderer.updateBullets(deltaTime);
 
