@@ -7,6 +7,7 @@ import { HUD } from '/js/ui/HUD.js';
 import { Menu, Scoreboard } from '/js/ui/Menu.js';
 import { NetworkManager } from '/js/network/NetworkManager.js';
 import { MobileControls } from '/js/ui/MobileControls.js';
+import { GamepadController } from '/js/engine/GamepadController.js';
 import { WalletManager } from '/js/wallet/WalletManager.js';
 
 export class Game {
@@ -33,6 +34,9 @@ export class Game {
 
         // Mobile controls
         this.mobileControls = new MobileControls(this);
+
+        // Gamepad controller (Xbox/Bluetooth)
+        this.gamepad = new GamepadController(this);
 
         // Resize UI canvas
         this.resize();
@@ -283,9 +287,34 @@ export class Game {
     update(deltaTime) {
         if (this.gameState !== 'playing' || !this.localPlayer) return;
 
-        // Build mobile overrides for Player
-        let mobileOverrides = null;
-        if (this.mobileControls.enabled) {
+        // Update gamepad state
+        this.gamepad.update();
+
+        // Build input overrides for Player (mobile OR gamepad)
+        let inputOverrides = null;
+
+        // Check gamepad first (takes priority if active)
+        if (this.gamepad.enabled && (this.gamepad.leftStick.x !== 0 || this.gamepad.leftStick.y !== 0 ||
+            this.gamepad.rightStick.x !== 0 || this.gamepad.rightStick.y !== 0)) {
+            const gamepadMove = this.gamepad.getMovementVector();
+            const gamepadAim = this.gamepad.getAimDelta();
+
+            inputOverrides = {
+                movement: gamepadMove,
+                aimDelta: gamepadAim
+            };
+
+            // Handle gamepad stat allocation
+            const gamepadStat = this.gamepad.getStatInput();
+            if (gamepadStat && this.localPlayer.skillPoints > 0) {
+                this.network.send({
+                    type: 'allocateStat',
+                    stat: gamepadStat
+                });
+            }
+        }
+        // Fall back to mobile controls
+        else if (this.mobileControls.enabled) {
             // Get movement from joystick
             const joystickMove = this.mobileControls.joystick.active
                 ? this.mobileControls.getMovementVector()
@@ -295,7 +324,7 @@ export class Game {
             const aimDelta = this.mobileControls.getAimDelta();
 
             if (joystickMove || aimDelta) {
-                mobileOverrides = {
+                inputOverrides = {
                     movement: joystickMove,
                     aimDelta: aimDelta
                 };
@@ -318,24 +347,37 @@ export class Game {
             }
         }
 
-        // Player logic - pass mobile overrides
-        this.localPlayer.update(deltaTime, this.input, mobileOverrides);
+        // Player logic - pass input overrides
+        this.localPlayer.update(deltaTime, this.input, inputOverrides);
 
         this.renderer.updateBullets(deltaTime);
 
-        // Get movement from keyboard or mobile joystick
+        // Get movement from keyboard, mobile joystick, or gamepad
         let movement = this.input.getMovementVector();
-        if (this.mobileControls.enabled && this.mobileControls.joystick.active) {
+        if (this.gamepad.enabled && this.gamepad.leftStick.x !== 0 || this.gamepad.leftStick.y !== 0) {
+            const gpMove = this.gamepad.getMovementVector();
+            movement.x = gpMove.x;
+            movement.z = gpMove.z;
+        } else if (this.mobileControls.enabled && this.mobileControls.joystick.active) {
             const mobileMove = this.mobileControls.getMovementVector();
             movement.x = mobileMove.x;
             movement.z = mobileMove.z;
         }
 
-        const dashKey = this.input.getAndResetDash();
+        // Get dash from keyboard or gamepad
+        let dashKey = this.input.getAndResetDash();
+        const gamepadDash = this.gamepad.consumeDash();
+        if (gamepadDash) {
+            // Map gamepad dash directions to keyboard codes for server
+            dashKey = gamepadDash;
+        }
 
-        // Check for mobile jump
+        // Check for jump from keyboard, mobile, or gamepad
         let jumpPressed = this.input.isKeyDown('Space');
         if (this.mobileControls.enabled && this.mobileControls.consumeJump()) {
+            jumpPressed = true;
+        }
+        if (this.gamepad.consumeJump()) {
             jumpPressed = true;
         }
 
@@ -349,9 +391,10 @@ export class Game {
             dash: !!dashKey
         });
 
-        // Shooting (keyboard/mouse or mobile)
+        // Shooting (keyboard/mouse, mobile, or gamepad)
         const shouldShoot = this.input.isMouseButtonDown(0) ||
-            (this.mobileControls.enabled && this.mobileControls.isShootHeld());
+            (this.mobileControls.enabled && this.mobileControls.isShootHeld()) ||
+            this.gamepad.isShootHeld();
         if (shouldShoot) {
             const now = Date.now();
             if (now - this.lastShootTime > 300) {
@@ -361,9 +404,10 @@ export class Game {
             }
         }
 
-        // Reload (keyboard or mobile)
+        // Reload (keyboard, mobile, or gamepad)
         const shouldReload = this.input.isKeyDown('KeyR') || this.input.isKeyDown('KeyQ') ||
-            (this.mobileControls.enabled && this.mobileControls.consumeReload());
+            (this.mobileControls.enabled && this.mobileControls.consumeReload()) ||
+            this.gamepad.isReloadPressed();
         if (shouldReload) {
             this.network.sendReload();
         }
