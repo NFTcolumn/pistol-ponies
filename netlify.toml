@@ -12,7 +12,19 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA redirects - route all requests to index.html for client-side routing
+# Multi-page routing
+# Ads page - serve the ads index.html
+[[redirects]]
+  from = "/ads"
+  to = "/ads/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/ads/"
+  to = "/ads/index.html"
+  status = 200
+
+# SPA fallback - only for routes that don't match files
 [[redirects]]
   from = "/*"
   to = "/index.html"
