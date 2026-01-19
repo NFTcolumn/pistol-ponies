@@ -263,10 +263,10 @@ export class Game {
 
                     // Prevent local stats from being overwritten by server for a moment
                     this.isSyncingStats = true;
-                    setTimeout(() => { this.isSyncingStats = false; }, 2000);
+                    setTimeout(() => { this.isSyncingStats = false; }, 5000); // Extended to 5 seconds
 
                     // Tell backend about loaded stats including skills and name
-                    this.network.send({
+                    const syncPayload = {
                         type: 'syncStats',
                         stats: {
                             name: this.localPlayer.name, // Include name!
@@ -277,7 +277,10 @@ export class Game {
                             skillPoints: savedData.stats?.skillPoints || 0,
                             skills: savedData.stats // speed, health, ammo, jump, dash, aim
                         }
-                    });
+                    };
+                    console.log('[Load] Sending syncStats to server:', syncPayload);
+                    this.network.send(syncPayload);
+                    console.log('[Load] syncStats sent successfully');
                 }
             },
             onQuitGame: () => {
