@@ -35,4 +35,3 @@ pnpm-debug.log*
 wallet-config.cjs
 wallet.js
 contracts/
-js/wallet/ContractManager.js
