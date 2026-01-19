@@ -11,6 +11,7 @@
 # Environment variables for the build
 [build.environment]
   NODE_VERSION = "20"
+  VITE_SERVER_URL = "wss://pistol-ponies-production.up.railway.app"
 
 # Multi-page routing
 # Ads page - serve the ads index.html
