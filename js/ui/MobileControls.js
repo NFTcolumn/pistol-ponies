@@ -92,6 +92,11 @@ export class MobileControls {
         this.createButton('jump', '⬆️', this.settings.jumpPosition);
         this.createButton('reload', '🔄', this.settings.reloadPosition);
 
+        // Add Menu button in top right
+        const menuBtn = this.createButton('menu', '⏸️', { right: 20, top: 20 });
+        menuBtn.style.background = 'rgba(255, 107, 157, 0.7)';
+        menuBtn.style.border = '3px solid rgba(255, 107, 157, 0.9)';
+
         // Create stat allocation buttons (shown when skill points available)
         this.createStatButtons();
     }
@@ -428,6 +433,9 @@ export class MobileControls {
                 break;
             case 'reload':
                 this.reloadPressed = true;
+                break;
+            case 'menu':
+                this.game.toggleIngameMenu();
                 break;
         }
     }

@@ -141,4 +141,15 @@ export class Input {
 
         return { x, z };
     }
+
+    /**
+     * Reset all input state - called on game resume after sleep/wake
+     */
+    resetAllKeys() {
+        this.keys = {};
+        this.mouse.buttons = {};
+        this.mouse.movementX = 0;
+        this.mouse.movementY = 0;
+        this.dashTriggered = null;
+    }
 }

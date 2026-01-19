@@ -5,10 +5,12 @@ import { Input } from '/js/engine/Input.js';
 import { Player } from '/js/entities/Player.js';
 import { HUD } from '/js/ui/HUD.js';
 import { Menu, Scoreboard } from '/js/ui/Menu.js';
+import { IngameMenu } from '/js/ui/IngameMenu.js';
 import { NetworkManager } from '/js/network/NetworkManager.js';
 import { MobileControls } from '/js/ui/MobileControls.js';
 import { GamepadController } from '/js/engine/GamepadController.js';
 import { WalletManager } from '/js/wallet/WalletManager.js';
+import { ContractManager } from '/js/wallet/ContractManager.js';
 
 export class Game {
     constructor() {
@@ -20,6 +22,10 @@ export class Game {
         this.hud = new HUD(this.uiCanvas);
         this.menu = new Menu();
         this.scoreboard = new Scoreboard();
+        this.ingameMenu = new IngameMenu();
+
+        this.wallet = new WalletManager();
+        this.contracts = new ContractManager(this.wallet);
 
         this.network = new NetworkManager(this);
 
@@ -31,6 +37,9 @@ export class Game {
         this.gameState = 'menu';
         this.lastTime = performance.now();
         this.lastShootTime = 0;
+
+        // Sleep/wake robustness
+        this.gamePaused = false;
 
         // Mobile controls
         this.mobileControls = new MobileControls(this);
@@ -44,6 +53,7 @@ export class Game {
 
         this.setupMenuEvents();
         this.setupScoreboard();
+        this.setupVisibilityHandlers(); // Sleep/wake handling
 
         // Expose for debugging
         window.game = this;
@@ -84,102 +94,60 @@ export class Game {
         });
 
         // Wallet connection
-        this.wallet = new WalletManager();
         this.setupWalletEvents();
     }
 
     setupWalletEvents() {
-        const connectBtn = document.getElementById('connectWalletBtn');
-        const disconnectBtn = document.getElementById('disconnectWalletBtn');
-        const chainSelect = document.getElementById('chainSelect');
-        const playBtn = document.getElementById('playButton');
+        // connectBtn is now in the ESC menu
+        const connectBtn = document.getElementById('menuConnectBtn');
 
-        connectBtn.addEventListener('click', async () => {
-            try {
-                const selectedChain = parseInt(chainSelect.value);
-
-                const result = await this.wallet.connect();
-
-                // Switch to selected chain if different
-                if (this.wallet.chainId !== selectedChain) {
-                    await this.wallet.switchChain(selectedChain);
-                }
-
-                this.updateWalletUI(true);
-                await this.checkPonyHolder();
-            } catch (error) {
-                console.error('Wallet connection error:', error);
-                document.getElementById('walletStatus').textContent = error.message;
-                document.getElementById('walletStatus').className = 'wallet-status error';
-            }
-        });
-
-        disconnectBtn.addEventListener('click', () => {
-            this.wallet.disconnect();
-            this.updateWalletUI(false);
-            playBtn.disabled = true;
-        });
-
-        chainSelect.addEventListener('change', async () => {
-            if (this.wallet.connected) {
+        if (connectBtn) {
+            connectBtn.addEventListener('click', async () => {
                 try {
-                    await this.wallet.switchChain(parseInt(chainSelect.value));
-                    await this.checkPonyHolder();
+                    // Default to Base (8453)
+                    const selectedChain = 8453;
+
+                    const result = await this.wallet.connect();
+
+                    // Switch to selected chain if different
+                    if (this.wallet.chainId !== selectedChain) {
+                        await this.wallet.switchChain(selectedChain);
+                    }
+
+                    this.updateWalletUI(true);
                 } catch (error) {
-                    console.error('Chain switch error:', error);
+                    console.error('Wallet connection error:', error);
                 }
-            }
-        });
-    }
-
-    updateWalletUI(connected) {
-        const notConnected = document.getElementById('walletNotConnected');
-        const isConnected = document.getElementById('walletConnected');
-        const addressDisplay = document.getElementById('walletAddressDisplay');
-        const chainDisplay = document.getElementById('walletChainDisplay');
-
-        if (connected) {
-            notConnected.style.display = 'none';
-            isConnected.style.display = 'block';
-            addressDisplay.textContent = this.wallet.getShortAddress();
-            chainDisplay.textContent = this.wallet.CHAIN_NAMES[this.wallet.chainId] || 'Unknown';
-        } else {
-            notConnected.style.display = 'block';
-            isConnected.style.display = 'none';
+            });
         }
     }
 
-    async checkPonyHolder() {
-        const statusEl = document.getElementById('walletStatus');
-        const playBtn = document.getElementById('playButton');
+    updateWalletUI(connected) {
+        // Update both the dot and text in the ESC menu
+        this.ingameMenu.updateWalletStatus(connected, this.wallet.address);
 
-        statusEl.textContent = 'Checking PONY balance...';
-        statusEl.className = 'wallet-status';
-
-        try {
-            const isHolder = await this.wallet.isHolder(1n); // Require at least 1 PONY
-
-            if (isHolder) {
-                statusEl.textContent = '✅ PONY holder verified!';
-                statusEl.className = 'wallet-status success';
-                playBtn.disabled = false;
-            } else {
-                statusEl.textContent = '❌ You need PONY tokens to play';
-                statusEl.className = 'wallet-status error';
-                playBtn.disabled = true;
-            }
-        } catch (error) {
-            statusEl.textContent = 'Error checking balance';
-            statusEl.className = 'wallet-status error';
-            playBtn.disabled = true;
+        // Also show/hide the connect button
+        const connectBtn = document.getElementById('menuConnectBtn');
+        if (connectBtn) {
+            connectBtn.style.display = connected ? 'none' : 'inline-block';
         }
     }
 
     setupScoreboard() {
         window.addEventListener('keydown', (e) => {
+            // ESC to toggle in-game menu
+            if (e.code === 'Escape') {
+                e.preventDefault();
+                if (this.gameState === 'playing') {
+                    this.toggleIngameMenu();
+                }
+            }
+
             if (e.code === 'Tab') {
                 e.preventDefault();
-                if (this.gameState === 'playing') this.scoreboard.show();
+                if (this.gameState === 'playing' && !this.ingameMenu.isVisible()) {
+                    this.scoreboard.show();
+                }
             }
 
             // Skill point allocation with 1-5 keys
@@ -217,6 +185,132 @@ export class Game {
         this.input.setGameActive(true); // Enable game input handling
         this.mobileControls.show(); // Show mobile controls if on mobile
         this.network.connect();
+        this.setupIngameMenu(); // Setup in-game menu callbacks
+    }
+
+    setupIngameMenu() {
+        this.ingameMenu.setupEvents({
+            onResumeGame: () => {
+                this.ingameMenu.hide();
+                this.input.setGameActive(true);
+            },
+            onSaveGame: async () => {
+                if (!this.localPlayer) throw new Error('Player not initialized');
+                if (!this.wallet.connected) throw new Error('Wallet not connected');
+
+                // Build stats object with skillPoints included
+                const stats = {
+                    speed: this.localPlayer.stats?.speed || 0,
+                    health: this.localPlayer.stats?.health || 0,
+                    ammo: this.localPlayer.stats?.ammo || 0,
+                    jump: this.localPlayer.stats?.jump || 0,
+                    dash: this.localPlayer.stats?.dash || 0,
+                    aim: this.localPlayer.stats?.aim || 0,
+                    skillPoints: this.localPlayer.skillPoints || 0
+                };
+
+                const playerData = {
+                    name: this.localPlayer.name,
+                    kills: this.localPlayer.kills,
+                    deaths: this.localPlayer.deaths,
+                    level: this.localPlayer.level,
+                    xp: this.localPlayer.xp || 0,
+                    stats: stats,
+                    matches: this.localPlayer.matches || {}
+                };
+
+                console.log('Saving game data:', playerData);
+                await this.contracts.saveGame(playerData);
+            },
+            onLoadGame: async () => {
+                if (!this.wallet.connected) throw new Error('Wallet not connected');
+
+                const savedData = await this.contracts.loadGame();
+                if (!savedData) throw new Error('No saved game found');
+
+                console.log('[Load] Saved data received:', savedData);
+                console.log('[Load] localPlayer exists:', !!this.localPlayer);
+
+                // Update local player stats
+                if (this.localPlayer) {
+                    // Sync name from blockchain
+                    if (savedData.name) {
+                        this.localPlayer.name = savedData.name;
+                    }
+
+                    this.localPlayer.kills = savedData.kills || 0;
+                    this.localPlayer.deaths = savedData.deaths || 0;
+                    this.localPlayer.level = savedData.level || 1;
+                    this.localPlayer.xp = savedData.xp || 0;
+
+                    console.log('[Load] Applied to localPlayer - level:', this.localPlayer.level, 'kills:', this.localPlayer.kills);
+
+                    if (savedData.stats) {
+                        this.localPlayer.stats = { ...this.localPlayer.stats, ...savedData.stats };
+                        this.localPlayer.skillPoints = savedData.stats.skillPoints || 0;
+                        console.log('[Load] Applied stats:', this.localPlayer.stats);
+                    }
+
+                    // Update in-game menu display immediately with all stats
+                    this.ingameMenu.updateStats({
+                        name: this.localPlayer.name,
+                        kills: this.localPlayer.kills,
+                        level: this.localPlayer.level,
+                        deaths: this.localPlayer.deaths,
+                        skillPoints: this.localPlayer.skillPoints,
+                        stats: this.localPlayer.stats
+                    });
+
+                    // Prevent local stats from being overwritten by server for a moment
+                    this.isSyncingStats = true;
+                    setTimeout(() => { this.isSyncingStats = false; }, 2000);
+
+                    // Tell backend about loaded stats including skills and name
+                    this.network.send({
+                        type: 'syncStats',
+                        stats: {
+                            name: this.localPlayer.name, // Include name!
+                            kills: this.localPlayer.kills,
+                            deaths: this.localPlayer.deaths,
+                            level: this.localPlayer.level,
+                            xp: this.localPlayer.xp,
+                            skillPoints: savedData.stats?.skillPoints || 0,
+                            skills: savedData.stats // speed, health, ammo, jump, dash, aim
+                        }
+                    });
+                }
+            },
+            onQuitGame: () => {
+                this.ingameMenu.hide();
+                this.network.disconnect();
+                this.gameState = 'menu';
+                this.mobileControls.hide();
+                this.menu.show();
+                this.localPlayer = null;
+                this.players.clear();
+                this.playerMeshes.forEach(mesh => this.renderer.scene.remove(mesh));
+                this.playerMeshes.clear();
+            }
+        });
+    }
+
+    toggleIngameMenu() {
+        if (!this.localPlayer) return;
+
+        const playerData = {
+            kills: this.localPlayer.kills,
+            deaths: this.localPlayer.deaths,
+            level: this.localPlayer.level
+        };
+
+        const menuOpened = this.ingameMenu.toggle(
+            playerData,
+            this.wallet?.connected || false,
+            this.wallet?.address || ''
+        );
+
+        // Pause/resume game input when menu is toggled
+        this.input.setGameActive(!menuOpened);
     }
 
     onGameState(state) {
@@ -253,17 +347,19 @@ export class Game {
 
             player.health = data.health;
             player.alive = data.alive;
-            player.kills = data.kills;
-            player.deaths = data.deaths;
 
             // Sync XP and level system
-            player.xp = data.xp || 0;
-            player.level = data.level || 1;
-            player.killStreak = data.killStreak || 0;
-            player.skillPoints = data.skillPoints || 0;
-            player.stats = data.stats || { speed: 0, health: 0, ammo: 0, jump: 0, dash: 0, aim: 0 };
-            player.maxHealth = data.maxHealth || 100;
-            player.maxAmmo = data.maxAmmo || 12;
+            if (!this.isSyncingStats || id !== this.network.playerId) {
+                player.kills = data.kills;
+                player.deaths = data.deaths;
+                player.xp = data.xp || 0;
+                player.level = data.level || 1;
+                player.killStreak = data.killStreak || 0;
+                player.skillPoints = data.skillPoints || 0;
+                player.stats = data.stats || { speed: 0, health: 0, ammo: 0, jump: 0, dash: 0, aim: 0 };
+                player.maxHealth = data.maxHealth || 100;
+                player.maxAmmo = data.maxAmmo || 12;
+            }
 
             // Sync weapon state
             if (player.weapon) {
@@ -440,22 +536,26 @@ export class Game {
 
     run() {
         const currentTime = performance.now();
-        const deltaTime = Math.min((currentTime - this.lastTime) / 1000, 0.1);
+        // Clamp delta time to 33ms max (~30 FPS minimum) to prevent physics explosion after sleep
+        const deltaTime = Math.min((currentTime - this.lastTime) / 1000, 1 / 30);
         this.lastTime = currentTime;
 
-        this.update(deltaTime);
-        this.hud.update(deltaTime); // Update HUD for vignette decay
-        this.renderer.render();
+        // Skip game updates but keep loop alive when paused (tab hidden/sleeping)
+        if (!this.gamePaused) {
+            this.update(deltaTime);
+            this.hud.update(deltaTime); // Update HUD for vignette decay
+            this.renderer.render();
 
-        // Draw UI
-        const ctx = this.uiCanvas.getContext('2d');
-        ctx.clearRect(0, 0, this.uiCanvas.width, this.uiCanvas.height);
-        this.hud.draw(ctx, this.localPlayer, this.players, this.mapData);
+            // Draw UI
+            const ctx = this.uiCanvas.getContext('2d');
+            ctx.clearRect(0, 0, this.uiCanvas.width, this.uiCanvas.height);
+            this.hud.draw(ctx, this.localPlayer, this.players, this.mapData);
 
-        // Draw scoreboard if visible (convert Map to Array of player values)
-        if (this.scoreboard.visible) {
-            const playersArray = Array.from(this.players.values());
-            this.scoreboard.draw(ctx, playersArray, this.uiCanvas);
+            // Draw scoreboard if visible (convert Map to Array of player values)
+            if (this.scoreboard.visible) {
+                const playersArray = Array.from(this.players.values());
+                this.scoreboard.draw(ctx, playersArray, this.uiCanvas);
+            }
         }
 
         requestAnimationFrame(() => this.run());
@@ -506,6 +606,92 @@ export class Game {
         }
         // Create the wall mesh
         this.renderer.addWall(wall);
+    }
+
+    // ========= SLEEP/WAKE ROBUSTNESS =========
+
+    /**
+     * Setup handlers for visibility changes, WebGL context loss, etc.
+     * Critical for surviving real-world conditions (tab switch, sleep, phone lock)
+     */
+    setupVisibilityHandlers() {
+        // Visibility change (tab switch, minimize)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.onGamePause();
+            } else {
+                this.onGameResume();
+            }
+        });
+
+        // Window blur/focus (window loses focus)
+        window.addEventListener('blur', () => this.onGamePause());
+        window.addEventListener('focus', () => this.onGameResume());
+
+        // WebGL context loss (common on Macs with power-saving GPUs)
+        this.canvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            console.warn('[Game] WebGL context lost - pausing game');
+            this.onGamePause();
+        });
+
+        this.canvas.addEventListener('webglcontextrestored', () => {
+            console.log('[Game] WebGL context restored - resuming');
+            // Renderer should rebuild scene if needed
+            if (this.renderer.onContextRestored) {
+                this.renderer.onContextRestored();
+            }
+            this.onGameResume();
+        });
+    }
+
+    /**
+     * Pause the game for sleep/wake handling
+     */
+    onGamePause() {
+        if (this.gamePaused) return; // Already paused
+        this.gamePaused = true;
+        console.log('[Game] Paused (visibility/blur)');
+    }
+
+    /**
+     * Resume the game after sleep/wake
+     * Resets timers to prevent delta time explosion
+     */
+    onGameResume() {
+        if (!this.gamePaused) return; // Already running
+
+        console.log('[Game] Resuming...');
+
+        // Reset timing to prevent huge delta time
+        this.lastTime = performance.now();
+        this.lastShootTime = 0;
+
+        // Reset input state to prevent stuck keys
+        if (this.input.resetAllKeys) {
+            this.input.resetAllKeys();
+        }
+
+        // Resume audio context if suspended
+        this.resumeAudioContext();
+
+        this.gamePaused = false;
+        console.log('[Game] Resumed successfully');
+    }
+
+    /**
+     * Resume audio context after visibility change
+     */
+    resumeAudioContext() {
+        // Check for any audio context on renderer or globally
+        const audioCtx = this.renderer?.audioContext || window.audioContext;
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+                console.log('[Game] Audio context resumed');
+            }).catch(err => {
+                console.warn('[Game] Failed to resume audio:', err);
+            });
+        }
     }
 }
 

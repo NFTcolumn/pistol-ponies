@@ -499,3 +499,340 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
+
+/* ===== IN-GAME MENU (ESC PAUSE MENU) ===== */
+#ingameMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(20, 20, 40, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: menuFadeIn 0.2s ease-out;
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.ingame-menu-container {
+  background: linear-gradient(145deg, rgba(42, 42, 78, 0.95), rgba(30, 30, 55, 0.95));
+  border: 2px solid rgba(255, 107, 157, 0.5);
+  border-radius: 20px;
+  padding: 30px 40px;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 107, 157, 0.1);
+}
+
+.ingame-menu-title {
+  color: #ff6b9d;
+  font-size: 28px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.ingame-menu-subtitle {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.wallet-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.wallet-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff6b6b;
+}
+
+.wallet-dot.connected {
+  background: #4ecdc4;
+}
+
+.wallet-status-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+
+.menu-stats-display {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-stats-display h4 {
+  color: #ffe66d;
+  font-size: 12px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.player-name-display {
+  text-align: center;
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.player-name-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+.player-name-value {
+  color: #ffe66d;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  color: #4ecdc4;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+/* Skill Stats Section */
+.skill-stats-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.skill-stats-title {
+  color: #ffe66d;
+  font-size: 14px;
+  margin: 0 0 10px 0;
+  text-align: center;
+}
+
+.skill-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.skill-item {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.skill-item span {
+  color: #4ecdc4;
+  font-weight: 700;
+}
+
+.skill-icon {
+  margin-right: 4px;
+}
+
+.skill-points-display {
+  margin-top: 10px;
+  text-align: center;
+  color: #ffe66d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ingame-menu-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.btn-ingame {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: 'Inter', sans-serif;
+}
+
+.btn-resume {
+  background: linear-gradient(135deg, #4ecdc4, #45b7aa);
+  color: #fff;
+}
+
+.btn-resume:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(78, 205, 196, 0.4);
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #ffe66d, #f5d442);
+  color: #1a1a3a;
+}
+
+.btn-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 230, 109, 0.4);
+}
+
+.btn-load {
+  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  color: #fff;
+}
+
+.btn-load:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(167, 139, 250, 0.4);
+}
+
+.btn-quit {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+  color: #fff;
+}
+
+.btn-quit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+}
+
+.save-fee-notice {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  text-align: center;
+  margin-top: 15px;
+}
+
+.tx-status {
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 13px;
+  display: none;
+}
+
+.tx-status.pending {
+  display: block;
+  background: rgba(255, 230, 109, 0.2);
+  border: 1px solid #ffe66d;
+  color: #ffe66d;
+}
+
+.tx-status.success {
+  display: block;
+  background: rgba(78, 205, 196, 0.2);
+  border: 1px solid #4ecdc4;
+  color: #4ecdc4;
+}
+
+.tx-status.error {
+  display: block;
+  background: rgba(255, 107, 107, 0.2);
+  border: 1px solid #ff6b6b;
+  color: #ff6b6b;
+}
+
+/* Mobile Controls Enhancement */
+.mobile-btn {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+
+.mobile-btn:active {
+  transform: scale(0.9) !important;
+}
+
+.mobile-joystick-base {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-stat-btn {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+
+.mobile-stat-btn:active {
+  transform: scale(0.9) !important;
+}
+
+/* ===== PONY LABS FOOTER ===== */
+.pony-labs-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 50;
+}
+
+.pony-labs-footer a {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pony-labs-footer a:hover {
+  color: #ff6b9d;
+}
+
+.pony-labs-footer .pony-icon {
+  font-size: 16px;
+}

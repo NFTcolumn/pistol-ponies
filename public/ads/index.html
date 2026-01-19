@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pistol Ponies Ads Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Outfit:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(30, 30, 50, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background-color: #0f0f1a;
+            color: #eee;
+            font-family: 'Outfit', 'Inter', sans-serif;
+            margin: 0;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ff6b9d;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 0.5rem;
+        }
+
+        .ad-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 3rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            padding: 0.8rem;
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff6b9d, #ee0979);
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            background: #444;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .active-ads-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .ad-preview {
+            aspect-ratio: 1.9/1;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #333;
+        }
+
+        .ad-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .ad-label {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border-radius: 4px;
+        }
+
+        .my-ads-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .my-ads-table th,
+        .my-ads-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .my-ads-table th {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .status-pill {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .status-active {
+            background: rgba(81, 207, 102, 0.2);
+            color: #51cf66;
+        }
+
+        .status-pending {
+            background: rgba(255, 230, 109, 0.2);
+            color: #ffe66d;
+        }
+
+        .wallet-bar {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--glass-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wallet-bar">
+        <span id="walletAddress">Not Connected</span>
+        <button id="connectBtn" class="btn" style="padding: 0.5rem 1rem;">Connect</button>
+    </div>
+
+    <h1>Pistol Ponies Ads</h1>
+    <p class="subtitle">16 Parallel Tracks • Automated Queueing • Instant Visibility</p>
+
+    <div class="dashboard-container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div id="hourlyRate" class="stat-value">...</div>
+                <div class="stat-label">Price per Hour</div>
+            </div>
+            <div class="stat-card">
+                <div id="nextAvailable" class="stat-value">...</div>
+                <div class="stat-label">Earliest Track Opens</div>
+            </div>
+            <div class="stat-card">
+                <div id="totalQueue" class="stat-value">...</div>
+                <div class="stat-label">Total Booked Time</div>
+            </div>
+        </div>
+
+        <div class="ad-form">
+            <h2>Queue a New Ad</h2>
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 1rem;">
+                📐 Recommended size: <strong>1200 × 630 pixels</strong> (1.9:1 ratio) • PNG or JPG
+            </p>
+            <div class="form-group">
+                <label>Image URL (HTTPS)</label>
+                <input type="text" id="imageUrl" placeholder="https://example.com/banner.png">
+            </div>
+            <div class="form-group">
+                <label>Duration (Hours)</label>
+                <input type="number" id="duration" value="1" min="1">
+            </div>
+            <div id="costEstimate" style="color: #888;">Total Cost: 0.00001389 ETH</div>
+            <button id="buyBtn" class="btn">Purchase & Queue Ad</button>
+            <div id="txStatus" style="margin-top: 1rem; text-align: center;"></div>
+        </div>
+
+        <h2>Live Preview (Arena Walls)</h2>
+        <div class="active-ads-grid" id="activeAdsGrid">
+            <!-- Ads will be populated here -->
+        </div>
+
+        <h2 style="margin-top: 3rem;">My Booked Ads</h2>
+        <table class="my-ads-table">
+            <thead>
+                <tr>
+                    <th>Track</th>
+                    <th>Image</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="myAdsBody">
+                <!-- User's ads will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pony Labs Footer -->
+    <footer class="pony-labs-footer"
+        style="position: relative; margin-top: 3rem; background: transparent; border: none;">
+        <a href="/" style="margin-right: 20px;">🎮 Back to Game</a>
+        <a href="https://labs.pxpony.com" target="_blank">
+            <span class="pony-icon">🐴</span>
+            Powered by Pony Labs
+        </a>
+    </footer>
+
+    <script type="module" src="/ads/ads.js"></script>
+</body>
+
+</html>

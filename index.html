@@ -6,6 +6,41 @@
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Pistol Ponies - 2D Online FPS</title>
+
+  <!-- SEO Meta -->
+  <meta name="description"
+    content="Pistol Ponies - A fast-paced 2D online multiplayer shooter. Play with friends, level up, upgrade skills, and dominate the arena!">
+  <meta name="keywords" content="pistol ponies, multiplayer game, 2D shooter, online FPS, browser game">
+  <meta name="author" content="Pony Labs">
+
+  <!-- Favicon & App Icons -->
+  <link rel="icon" type="image/png" href="/favicon/appicon.png">
+  <link rel="apple-touch-icon" href="/favicon/appicon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#ff6b9d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pistol Ponies">
+
+  <!-- Open Graph (Facebook, iMessage, Discord, etc.) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Pistol Ponies - 2D Online FPS">
+  <meta property="og:description"
+    content="A fast-paced 2D online multiplayer shooter. Play with friends, level up, and dominate the arena!">
+  <meta property="og:image" content="/splash.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://pistolponies.com">
+  <meta property="og:site_name" content="Pistol Ponies">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Pistol Ponies - 2D Online FPS">
+  <meta name="twitter:description"
+    content="A fast-paced 2D online multiplayer shooter. Play with friends, level up, and dominate the arena!">
+  <meta name="twitter:image" content="/splash.png">
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -72,27 +107,7 @@
         <p class="game-subtitle">2D Online Multiplayer Shooter</p>
 
         <div class="menu-content">
-          <!-- Wallet Connection Section (DISABLED FOR NOW) -->
-          <div id="walletSection" class="wallet-section" style="display: none;">
-            <div id="walletNotConnected">
-              <p class="wallet-label">🔐 Connect wallet to play</p>
-              <select id="chainSelect" class="chain-select">
-                <option value="8453">Base</option>
-                <option value="56">BNB Chain</option>
-                <option value="137">Polygon</option>
-                <option value="42220">Celo</option>
-              </select>
-              <button id="connectWalletBtn" class="btn btn-wallet">
-                <span>🦊 Connect Wallet</span>
-              </button>
-            </div>
-            <div id="walletConnected" style="display: none;">
-              <p class="wallet-address" id="walletAddressDisplay">0x1234...5678</p>
-              <p class="wallet-chain" id="walletChainDisplay">Base</p>
-              <p class="wallet-status" id="walletStatus">Checking PONY balance...</p>
-              <button id="disconnectWalletBtn" class="btn btn-secondary btn-small">Disconnect</button>
-            </div>
-          </div>
+
 
           <div class="input-group">
             <label for="playerName">Player Name</label>
@@ -152,13 +167,95 @@
     </div>
   </div>
 
+  <!-- In-Game Menu (ESC Menu) -->
+  <div id="ingameMenu" style="display: none;">
+    <div class="ingame-menu-container">
+      <h2 class="ingame-menu-title">⏸️ Paused</h2>
+      <p class="ingame-menu-subtitle">Press ESC to resume</p>
+
+      <div class="wallet-status-bar">
+        <div class="wallet-dot" id="menuWalletDot"></div>
+        <span class="wallet-status-text" id="menuWalletStatus">Wallet not connected</span>
+        <button id="menuConnectBtn" class="btn btn-wallet btn-small"
+          style="margin-left: 10px; padding: 5px 10px;">Connect</button>
+      </div>
+
+      <div class="menu-stats-display">
+        <h4>📊 Current Stats</h4>
+        <div class="player-name-display">
+          <span class="player-name-label">Player:</span>
+          <span class="player-name-value" id="menuPlayerName">-</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value" id="menuKills">0</div>
+            <div class="stat-label">Kills</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="menuLevel">1</div>
+            <div class="stat-label">Level</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="menuDeaths">0</div>
+            <div class="stat-label">Deaths</div>
+          </div>
+        </div>
+
+        <!-- Skill Stats -->
+        <div class="skill-stats-section">
+          <h4 class="skill-stats-title">⚡ Skills</h4>
+          <div class="skill-stats-grid">
+            <div class="skill-item"><span class="skill-icon">🏃</span> Speed: <span id="menuSpeed">0</span></div>
+            <div class="skill-item"><span class="skill-icon">❤️</span> Health: <span id="menuHealth">0</span></div>
+            <div class="skill-item"><span class="skill-icon">🔫</span> Ammo: <span id="menuAmmo">0</span></div>
+            <div class="skill-item"><span class="skill-icon">🦘</span> Jump: <span id="menuJump">0</span></div>
+            <div class="skill-item"><span class="skill-icon">💨</span> Dash: <span id="menuDash">0</span></div>
+            <div class="skill-item"><span class="skill-icon">🎯</span> Aim: <span id="menuAim">0</span></div>
+          </div>
+          <div class="skill-points-display">Skill Points: <span id="menuSkillPoints">0</span></div>
+        </div>
+      </div>
+
+      <div class="ingame-menu-buttons">
+        <button id="resumeBtn" class="btn-ingame btn-resume">▶️ Resume Game</button>
+        <button id="saveGameBtn" class="btn-ingame btn-save">💾 Save Game</button>
+        <button id="loadGameBtn" class="btn-ingame btn-load">📂 Load Game</button>
+        <button id="quitGameBtn" class="btn-ingame btn-quit">🚪 Quit to Menu</button>
+      </div>
+
+      <p class="save-fee-notice">Save costs ~0.000005 ETH on Base (~1¢)</p>
+
+      <div class="tx-status" id="txStatus"></div>
+    </div>
+  </div>
+
   <!-- Game Canvas -->
   <canvas id="gameCanvas" style="display: none;"></canvas>
   <!-- UI Canvas -->
   <canvas id="uiCanvas" style="display: none; pointer-events: none;"></canvas>
 
+  <!-- Pony Labs Footer (hidden during gameplay) -->
+  <footer class="pony-labs-footer" id="ponyLabsFooter">
+    <a href="https://labs.pxpony.com" target="_blank">
+      <span class="pony-icon">🐴</span>
+      Powered by Pony Labs
+    </a>
+    <span style="margin: 0 15px; color: rgba(255,255,255,0.3);">•</span>
+    <a href="/ads" style="color: rgba(255,255,255,0.5);">📺 Advertise In-Game</a>
+  </footer>
+
   <!-- Load Game -->
   <script type="module" src="/js/engine/Game.js"></script>
+
+  <script>
+    // Hide footer during gameplay
+    const footer = document.getElementById('ponyLabsFooter');
+    const observer = new MutationObserver(() => {
+      const gameCanvas = document.getElementById('gameCanvas');
+      footer.style.display = gameCanvas.style.display === 'none' ? 'block' : 'none';
+    });
+    observer.observe(document.getElementById('gameCanvas'), { attributes: true, attributeFilter: ['style'] });
+  </script>
 </body>
 
 </html>

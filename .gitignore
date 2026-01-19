@@ -30,3 +30,9 @@ pnpm-debug.log*
 
 # Local Netlify folder
 .netlify
+
+# Wallet & Contract secrets - NEVER COMMIT!
+wallet-config.cjs
+wallet.js
+contracts/
+js/wallet/ContractManager.js
