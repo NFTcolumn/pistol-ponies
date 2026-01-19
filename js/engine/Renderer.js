@@ -5,6 +5,12 @@ export class Renderer {
     constructor(canvas) {
         this.canvas = canvas;
 
+        // Check WebGL availability first
+        if (!this.isWebGLAvailable()) {
+            this.showWebGLError();
+            throw new Error('WebGL not available');
+        }
+
         // Initialize Three.js
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(GameConfig.COLORS.BACKGROUND);
@@ -489,5 +495,51 @@ export class Renderer {
 
         group.scale.set(0.6, 0.6, 0.6);
         return group;
+    }
+
+    isWebGLAvailable() {
+        try {
+            const canvas = document.createElement('canvas');
+            return !!(window.WebGLRenderingContext &&
+                (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+        } catch (e) {
+            return false;
+        }
+    }
+
+    showWebGLError() {
+        const container = document.createElement('div');
+        container.style.cssText = `
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #1a1a2e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        `;
+        container.innerHTML = `
+            <div style="max-width: 500px; text-align: center; color: #fff; font-family: Inter, sans-serif;">
+                <h1 style="font-size: 48px; margin-bottom: 20px;">🎮</h1>
+                <h2 style="color: #ff6b9d; margin-bottom: 15px;">WebGL Required</h2>
+                <p style="color: #888; line-height: 1.6; margin-bottom: 20px;">
+                    Pistol Ponies requires WebGL to run, but your browser has it disabled.
+                </p>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; text-align: left;">
+                    <p style="color: #4ecdc4; font-weight: bold; margin-bottom: 10px;">🦁 Using Brave?</p>
+                    <ol style="color: #ccc; line-height: 1.8; padding-left: 20px;">
+                        <li>Click the <strong>Shields icon</strong> (lion) in the URL bar</li>
+                        <li>Click <strong>"Advanced controls"</strong></li>
+                        <li>Set <strong>"Fingerprinting protection"</strong> to "Allow fingerprinting"</li>
+                        <li>Refresh the page</li>
+                    </ol>
+                </div>
+                <p style="color: #666; margin-top: 20px; font-size: 14px;">
+                    Or try Chrome, Firefox, Safari, or Edge.
+                </p>
+            </div>
+        `;
+        document.body.appendChild(container);
     }
 }
