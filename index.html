@@ -47,6 +47,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <meta name="monetag" content="aa3502d9d035d113129db6098f5c0f0d">
+  <script>(function (s) { s.dataset.zone = '10494023', s.src = 'https://nap5k.com/tag.min.js' })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 </head>
 
 <body>
@@ -76,30 +77,30 @@
   </div>
 
   <script>
-    (function () {
-      const correctHash = 'a3f2b8c9d4e1f6a7b8c9d0e1f2a3b4c5'; // Simple obfuscation
-      const storedAccess = sessionStorage.getItem('pp_access');
+      (function () {
+        const correctHash = 'a3f2b8c9d4e1f6a7b8c9d0e1f2a3b4c5'; // Simple obfuscation
+        const storedAccess = sessionStorage.getItem('pp_access');
 
-      if (storedAccess === 'granted') {
-        document.getElementById('passwordGate').style.display = 'none';
-      }
-
-      document.getElementById('submitPassword').addEventListener('click', checkPassword);
-      document.getElementById('accessPassword').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') checkPassword();
-      });
-
-      function checkPassword() {
-        const input = document.getElementById('accessPassword').value;
-        if (input === 'Pixel_P007') {
-          sessionStorage.setItem('pp_access', 'granted');
+        if (storedAccess === 'granted') {
           document.getElementById('passwordGate').style.display = 'none';
-        } else {
-          document.getElementById('passwordError').style.display = 'block';
-          document.getElementById('accessPassword').value = '';
         }
-      }
-    })();
+
+        document.getElementById('submitPassword').addEventListener('click', checkPassword);
+        document.getElementById('accessPassword').addEventListener('keypress', function (e) {
+          if (e.key === 'Enter') checkPassword();
+        });
+
+        function checkPassword() {
+          const input = document.getElementById('accessPassword').value;
+          if (input === 'Pixel_P007') {
+            sessionStorage.setItem('pp_access', 'granted');
+            document.getElementById('passwordGate').style.display = 'none';
+          } else {
+            document.getElementById('passwordError').style.display = 'block';
+            document.getElementById('accessPassword').value = '';
+          }
+        }
+      })();
   </script>
 
   <!-- Menu Screen -->
