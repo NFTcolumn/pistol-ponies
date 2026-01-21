@@ -153,10 +153,10 @@ export class MobileControls {
 
         this.createButton('jump', '⬆️', hFlip(this.settings.jumpPosition));
         this.createButton('reload', '🔄', hFlip(this.settings.reloadPosition));
-        this.createButton('shoot', '🔥', hFlip(this.settings.shootPosition));
+        this.createButton('shoot', '🔥', hFlip(this.settings.shootPosition), 90); // 90px fire button
 
-        // Add Menu button in top right (or top left if lefty)
-        const menuBtn = this.createButton('menu', '⏸️', hFlip({ right: 20, top: 20 }));
+        // Add Menu button centered at top
+        const menuBtn = this.createButton('menu', '⏸️', { left: '50%', top: 20 });
         menuBtn.style.background = 'rgba(255, 107, 157, 0.7)';
         menuBtn.style.border = '3px solid rgba(255, 107, 157, 0.9)';
 
@@ -210,15 +210,22 @@ export class MobileControls {
         return base;
     }
 
-    createButton(name, emoji, position) {
-        const size = this.settings.buttonSize * this.settings.hudScale;
+    createButton(name, emoji, position, customSize = null) {
+        const size = (customSize || this.settings.buttonSize) * this.settings.hudScale;
         const btn = document.createElement('div');
         btn.className = `mobile-btn mobile-btn-${name}`;
         btn.dataset.action = name;
 
         let posStyle = '';
         if (position.right !== undefined) posStyle += `right: ${position.right}px;`;
-        if (position.left !== undefined) posStyle += `left: ${position.left}px;`;
+        if (position.left !== undefined) {
+            // Handle percentage for centering
+            if (typeof position.left === 'string' && position.left.includes('%')) {
+                posStyle += `left: ${position.left}; transform: translateX(-50%);`;
+            } else {
+                posStyle += `left: ${position.left}px;`;
+            }
+        }
         if (position.bottom !== undefined) posStyle += `bottom: ${position.bottom}px;`;
         if (position.top !== undefined) posStyle += `top: ${position.top}px;`;
 

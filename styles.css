@@ -911,3 +911,15 @@ body {
 .pony-labs-footer .pony-icon {
   font-size: 16px;
 }
+
+/* Mobile pause menu scaling - 25% reduction */
+@media (max-width: 768px),
+(max-height: 800px) {
+  .ingame-menu-container {
+    transform: scale(0.75);
+    transform-origin: center;
+    padding: 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}

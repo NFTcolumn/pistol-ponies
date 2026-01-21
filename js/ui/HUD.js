@@ -57,14 +57,14 @@ export class HUD {
             this.drawMinimap(ctx, player, players, mapData, 20 * scale, 20 * scale, scale);
         }
 
-        // Health bar (below minimap on mobile, bottom left on desktop)
+        // Health bar - bottom left for mobile
         const isLefty = mobileSettings.leftyMode;
 
         let healthX = 20 * scale;
         if (this.isMobile && isLefty) {
             healthX = width - (200 * scale) - (20 * scale);
         }
-        const healthY = this.isMobile ? (20 * scale) + (180 * scale) + (15 * scale) : height - (100 * scale);
+        const healthY = this.isMobile ? height - (100 * scale) : height - (100 * scale);
         this.drawHealthSection(ctx, player, healthX, healthY, scale);
 
         // Ammo counter (top right on mobile, bottom right on desktop)
