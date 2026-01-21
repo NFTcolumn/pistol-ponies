@@ -211,7 +211,7 @@ class GameServer {
                 health: 0,   // +10 max HP per point
                 ammo: 0,     // +2 max ammo per point
                 jump: 0,     // +10% jump height per point
-                dash: 0,     // +15% dash distance per point
+                dash: 0,     // +2.5% dash distance per point
                 aim: 0       // -10% aim spread per point
             },
             weapon: {
@@ -326,7 +326,7 @@ class GameServer {
                 health: 0,   // +10 max HP per point
                 ammo: 0,     // +2 max ammo per point
                 jump: 0,     // +10% jump height per point
-                dash: 0,     // +15% dash distance per point
+                dash: 0,     // +2.5% dash distance per point
                 aim: 0       // -10% aim spread per point
             },
             weapon: {
@@ -397,23 +397,33 @@ class GameServer {
             player.vHeight = Math.min(player.vHeight, 100); // Cap upward velocity
         }
 
-        // Apply dash with stat: +15% dash distance per point
+        // Apply dash with stat: +2.5% dash distance per point
         if (data.input.dash && Date.now() - player.lastDashTime > 800) {
-            const baseDash = 125;
-            const dashMultiplier = 1 + (player.stats?.dash || 0) * 0.15;
+            const baseDash = 200;
+            const dashMultiplier = 1 + (player.stats?.dash || 0) * 0.025;
             const dashDist = baseDash * dashMultiplier;
-            const dashX = data.input.x * dashDist;
-            const dashY = data.input.y * dashDist;
+
+            // If standing still, dash in facing direction
+            let dashX = data.input.x * dashDist;
+            let dashY = data.input.y * dashDist;
+
+            if (data.input.x === 0 && data.input.y === 0) {
+                dashX = Math.sin(player.angle) * dashDist;
+                dashY = -Math.cos(player.angle) * dashDist;
+            }
 
             // Apply instantly with collision check (simple)
             const steps = 10;
             const colRadius = 15; // Reduced radius for tighter gaps
+            const stepSizeX = dashX / steps;
+            const stepSizeY = dashY / steps;
+
             for (let i = 0; i < steps; i++) {
-                const stepX = player.x + (dashX / steps);
-                const stepY = player.y + (dashY / steps);
-                if (!this.checkWallCollision(stepX, stepY, colRadius)) {
-                    player.x = stepX;
-                    player.y = stepY;
+                const nextX = player.x + stepSizeX;
+                const nextY = player.y + stepSizeY;
+                if (!this.checkWallCollision(nextX, nextY, colRadius)) {
+                    player.x = nextX;
+                    player.y = nextY;
                 } else {
                     break;
                 }

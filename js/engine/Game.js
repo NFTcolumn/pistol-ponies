@@ -301,9 +301,12 @@ export class Game {
         if (!this.localPlayer) return;
 
         const playerData = {
+            name: this.localPlayer.name,
             kills: this.localPlayer.kills,
             deaths: this.localPlayer.deaths,
-            level: this.localPlayer.level
+            level: this.localPlayer.level,
+            skillPoints: this.localPlayer.skillPoints,
+            stats: this.localPlayer.stats || { speed: 0, health: 0, ammo: 0, jump: 0, dash: 0, aim: 0 }
         };
 
         const menuOpened = this.ingameMenu.toggle(
@@ -452,12 +455,7 @@ export class Game {
             }
         }
 
-        // Handle desktop dash (double-tap WASD)
-        const desktopDash = this.input.getAndResetDash();
-        if (desktopDash) {
-            this.localPlayer.isDashing = true;
-            setTimeout(() => { if (this.localPlayer) this.localPlayer.isDashing = false; }, 200);
-        }
+
 
         // Player logic - pass input overrides
         this.localPlayer.update(deltaTime, this.input, inputOverrides);
@@ -477,11 +475,16 @@ export class Game {
         }
 
         // Get dash from keyboard or gamepad
-        let dashKey = this.input.getAndResetDash();
+        const desktopDash = this.input.getAndResetDash();
         const gamepadDash = this.gamepad.consumeDash();
+
+        // Check for dash from keyboard, mobile, or gamepad
+        let dashTriggered = !!desktopDash;
+        if (this.mobileControls.enabled && this.mobileControls.getDash()) {
+            dashTriggered = true;
+        }
         if (gamepadDash) {
-            // Map gamepad dash directions to keyboard codes for server
-            dashKey = gamepadDash;
+            dashTriggered = true;
         }
 
         // Check for jump from keyboard, mobile, or gamepad
@@ -501,8 +504,15 @@ export class Game {
             angle: this.localPlayer.angle,
             pitch: this.localPlayer.pitch,
             jump: jumpPressed,
-            dash: !!dashKey
+            dash: dashTriggered
         });
+
+        // Set local isDashing flag for VFX (speed lines, FOV change)
+        if (dashTriggered) {
+            this.localPlayer.isDashing = true;
+            setTimeout(() => { if (this.localPlayer) this.localPlayer.isDashing = false; }, 200);
+        }
+
 
         // Shooting (keyboard/mouse, mobile, or gamepad)
         const shouldShoot = this.input.isMouseButtonDown(0) ||

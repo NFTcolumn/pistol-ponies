@@ -564,7 +564,7 @@ export class MobileControls {
     getAimDelta() {
         if (!this.aimJoystick.active) return null;
         // Sensitivity scaling for analog stick
-        const baseSensitivity = 5.0;
+        const baseSensitivity = 3.0;
         return {
             x: this.aimJoystick.x * baseSensitivity * this.settings.aimSensitivity,
             y: this.aimJoystick.y * baseSensitivity * this.settings.aimSensitivity

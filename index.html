@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Pistol Ponies - 3D Online FPS</title>
+  <title>Pistol Ponies - Play Now</title>
 
   <!-- SEO Meta -->
   <meta name="description"
@@ -23,23 +23,13 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Pistol Ponies">
 
-  <!-- Open Graph (Facebook, iMessage, Discord, etc.) -->
+  <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="Pistol Ponies - 3D Online FPS">
   <meta property="og:description"
     content="A fast-paced 3D online multiplayer shooter. Play with friends, level up, and dominate the arena!">
   <meta property="og:image" content="/splash.png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
   <meta property="og:url" content="https://pistolponies.com">
-  <meta property="og:site_name" content="Pistol Ponies">
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Pistol Ponies - 3D Online FPS">
-  <meta name="twitter:description"
-    content="A fast-paced 3D online multiplayer shooter. Play with friends, level up, and dominate the arena!">
-  <meta name="twitter:image" content="/splash.png">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,228 +38,106 @@
   <link rel="stylesheet" href="styles.css">
   <meta name="monetag" content="aa3502d9d035d113129db6098f5c0f0d">
   <script>(function (s) { s.dataset.zone = '10494023', s.src = 'https://nap5k.com/tag.min.js' })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+
+  <style>
+    body {
+      background: #bdc3ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .landing-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 40px;
+      border-radius: 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .landing-logo {
+      width: 250px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.1));
+    }
+
+    .landing-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .landing-subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .play-btn {
+      display: inline-block;
+      background: #ff6b9d;
+      color: white;
+      padding: 18px 45px;
+      border-radius: 50px;
+      font-size: 24px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 10px 20px rgba(255, 107, 157, 0.3);
+    }
+
+    .play-btn:hover {
+      transform: scale(1.05) translateY(-5px);
+      box-shadow: 0 15px 30px rgba(255, 107, 157, 0.4);
+      background: #ff85ae;
+    }
+
+    .footer-links {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #888;
+    }
+
+    .footer-links a {
+      color: #666;
+      text-decoration: none;
+      margin: 0 10px;
+    }
+  </style>
 </head>
 
 <body>
-  <!-- Password Gate -->
-  <div id="passwordGate" class="menu-screen"
-    style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #bdc3ff; z-index: 999;">
-    <div class="menu-container" style="max-width: 400px;">
-      <div class="logo-container">
-        <img src="/logo.png" alt="Pistol Ponies Logo" class="game-logo">
-      </div>
-      <p class="game-subtitle">🔒 Access Protected</p>
-      <div class="menu-content">
-        <div class="input-group">
-          <label for="accessPassword">Enter Password</label>
-          <input type="password" id="accessPassword" placeholder="Password" autocomplete="off">
-        </div>
-        <p id="passwordError" style="color: #ff6b9d; font-size: 14px; display: none;">Incorrect password</p>
-        <button id="submitPassword" class="btn btn-primary">
-          <span>🔓 Enter</span>
-        </button>
-        <p style="margin-top: 20px; font-size: 14px; color: #888;">
-          Need the password? <a href="https://t.me/pixelponies" target="_blank" rel="noopener"
-            style="color: #4ecdc4; text-decoration: none; font-weight: 600;">Get Access →</a>
-        </p>
-      </div>
-    </div>
-  </div>
+  <div class="landing-card">
+    <img src="/logo.png" alt="Pistol Ponies" class="landing-logo">
+    <h1 class="landing-title">Pistol Ponies</h1>
+    <p class="landing-subtitle">The ultimate 3D online multiplayer pony shooter. Battle friends, level up your pony, and
+      dominate the pixel arena!</p>
+    <a href="/game" class="play-btn">🎮 PLAY NOW</a>
 
-  <script>
-      (function () {
-        const correctHash = 'a3f2b8c9d4e1f6a7b8c9d0e1f2a3b4c5'; // Simple obfuscation
-        const storedAccess = sessionStorage.getItem('pp_access');
-
-        if (storedAccess === 'granted') {
-          document.getElementById('passwordGate').style.display = 'none';
-        }
-
-        document.getElementById('submitPassword').addEventListener('click', checkPassword);
-        document.getElementById('accessPassword').addEventListener('keypress', function (e) {
-          if (e.key === 'Enter') checkPassword();
-        });
-
-        function checkPassword() {
-          const input = document.getElementById('accessPassword').value;
-          if (input === 'Pixel_P007') {
-            sessionStorage.setItem('pp_access', 'granted');
-            document.getElementById('passwordGate').style.display = 'none';
-          } else {
-            document.getElementById('passwordError').style.display = 'block';
-            document.getElementById('accessPassword').value = '';
-          }
-        }
-      })();
-  </script>
-
-  <!-- Menu Screen -->
-  <div id="menu">
-    <!-- Main Menu -->
-    <div id="mainMenu" class="menu-screen">
-      <div class="menu-container">
-        <div class="logo-container">
-          <img src="/logo.png" alt="Pistol Ponies Logo" class="game-logo">
-        </div>
-        <p class="game-subtitle">3D Online Multiplayer Shooter</p>
-
-        <div class="menu-content">
-
-
-          <div class="input-group">
-            <label for="playerName">Player Name</label>
-            <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
-          </div>
-
-          <button id="playButton" class="btn btn-primary">
-            <span>🎮 PLAY NOW</span>
-          </button>
-
-          <button id="settingsButton" class="btn btn-secondary">
-            <span>⚙️ SETTINGS</span>
-          </button>
-        </div>
-
-        <div class="menu-footer">
-          <p>Controls: WASD/Arrows to move (Double tap to DASH), SPACE to jump, Mouse to aim, Click to shoot, Q/R to
-            reload</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Lobby Screen -->
-    <div id="lobbyScreen" class="menu-screen" style="display: none;">
-      <div class="menu-container">
-        <h2>Waiting for Players...</h2>
-        <div class="lobby-content">
-          <div id="playerList" class="player-list">
-            <!-- Players will be added here dynamically -->
-          </div>
-          <div class="lobby-status">
-            <div class="spinner"></div>
-            <p>Connecting to server...</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Settings Screen -->
-    <div id="settingsScreen" class="menu-screen" style="display: none;">
-      <div class="menu-container">
-        <h2>Settings</h2>
-        <div class="settings-content">
-          <div class="input-group">
-            <label for="floorTexture">Floor Texture</label>
-            <select id="floorTexture" class="btn btn-secondary">
-              <option value="">Solid Color</option>
-              <option value="/assets/textures/concrete.png">Concrete</option>
-              <option value="/assets/textures/tiles.png">Sci-Fi Tiles</option>
-            </select>
-          </div>
-          <button id="soundToggle" class="btn btn-secondary">Sound: ON</button>
-          <button id="mobileSettingsButton" class="btn btn-secondary">📱 Mobile Controls</button>
-          <button id="backButton" class="btn btn-secondary">← Back to Menu</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- In-Game Menu (ESC Menu) -->
-  <div id="ingameMenu" style="display: none;">
-    <div class="ingame-menu-container">
-      <h2 class="ingame-menu-title">⏸️ Paused</h2>
-      <p class="ingame-menu-subtitle">Press ESC to resume</p>
-
-      <div class="wallet-status-bar">
-        <div class="wallet-dot" id="menuWalletDot"></div>
-        <span class="wallet-status-text" id="menuWalletStatus">Wallet not connected</span>
-        <button id="menuConnectBtn" class="btn btn-wallet btn-small"
-          style="margin-left: 10px; padding: 5px 10px;">Connect</button>
-      </div>
-
-      <div class="menu-stats-display">
-        <h4>📊 Current Stats</h4>
-        <div class="player-name-display">
-          <span class="player-name-label">Player:</span>
-          <span class="player-name-value" id="menuPlayerName">-</span>
-        </div>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-value" id="menuKills">0</div>
-            <div class="stat-label">Kills</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value" id="menuLevel">1</div>
-            <div class="stat-label">Level</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value" id="menuDeaths">0</div>
-            <div class="stat-label">Deaths</div>
-          </div>
-        </div>
-
-        <!-- Skill Stats -->
-        <div class="skill-stats-section">
-          <h4 class="skill-stats-title">⚡ Skills</h4>
-          <div class="skill-stats-grid">
-            <div class="skill-item"><span class="skill-icon">🏃</span> Speed: <span id="menuSpeed">0</span></div>
-            <div class="skill-item"><span class="skill-icon">❤️</span> Health: <span id="menuHealth">0</span></div>
-            <div class="skill-item"><span class="skill-icon">🔫</span> Ammo: <span id="menuAmmo">0</span></div>
-            <div class="skill-item"><span class="skill-icon">🦘</span> Jump: <span id="menuJump">0</span></div>
-            <div class="skill-item"><span class="skill-icon">💨</span> Dash: <span id="menuDash">0</span></div>
-            <div class="skill-item"><span class="skill-icon">🎯</span> Aim: <span id="menuAim">0</span></div>
-          </div>
-          <div class="skill-points-display">Skill Points: <span id="menuSkillPoints">0</span></div>
-        </div>
-      </div>
-
-      <div class="ingame-menu-buttons">
-        <button id="resumeBtn" class="btn-ingame btn-resume">▶️ Resume Game</button>
-        <button id="saveGameBtn" class="btn-ingame btn-save">💾 Save Game</button>
-        <button id="loadGameBtn" class="btn-ingame btn-load">📂 Load Game</button>
-        <button id="quitGameBtn" class="btn-ingame btn-quit">🚪 Quit to Menu</button>
-      </div>
-
-      <p class="save-fee-notice">Save costs ~0.000005 ETH on Base (~1¢)</p>
-
-      <div class="tx-status" id="txStatus"></div>
-    </div>
-  </div>
-
-  <!-- Game Canvas -->
-  <canvas id="gameCanvas" style="display: none;"></canvas>
-  <!-- UI Canvas -->
-  <canvas id="uiCanvas" style="display: none; pointer-events: none;"></canvas>
-
-  <!-- Pony Labs Footer (hidden during gameplay) -->
-  <footer class="pony-labs-footer" id="ponyLabsFooter">
-    <a href="https://labs.pxpony.com" target="_blank">
-      <span class="pony-icon">🐴</span>
-      Powered by Pony Labs
-    </a>
-    <span style="margin: 0 15px; color: rgba(255,255,255,0.3);">•</span>
-    <a href="/ads" style="color: rgba(255,255,255,0.5);">📺 Advertise In-Game</a>
-  </footer>
-
-  <!-- Load Game -->
-  <script type="module" src="/js/engine/Game.js"></script>
-
-  <script>
-    // Hide footer during gameplay
-    const footer = document.getElementById('ponyLabsFooter');
-    const observer = new MutationObserver(() => {
-      const gameCanvas = document.getElementById('gameCanvas');
-      footer.style.display = gameCanvas.style.display === 'none' ? 'block' : 'none';
-    });
-    observer.observe(document.getElementById('gameCanvas'), { attributes: true, attributeFilter: ['style'] });
-  </script>
-
-  <!-- Orientation Lock Overlay -->
-  <div id="orientationOverlay" style="display: none;">
-    <div class="orientation-content">
-      <div class="rotate-icon">📱</div>
-      <h2>Please Rotate Your Device</h2>
-      <p>Pistol Ponies is best played in Landscape mode.</p>
+    <div class="footer-links">
+      <a href="/ads">Advertise</a>
+      <span>•</span>
+      <a href="https://t.me/pixelponies" target="_blank">Telegram</a>
     </div>
   </div>
 </body>

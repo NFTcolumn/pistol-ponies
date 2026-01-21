@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Pistol Ponies - 3D Online FPS</title>
+
+  <!-- SEO Meta -->
+  <meta name="description"
+    content="Pistol Ponies - A fast-paced 3D online multiplayer shooter. Play with friends, level up, upgrade skills, and dominate the arena!">
+  <meta name="keywords" content="pistol ponies, multiplayer game, 3D shooter, online FPS, browser game">
+  <meta name="author" content="Pony Labs">
+
+  <!-- Favicon & App Icons -->
+  <link rel="icon" type="image/png" href="/favicon/appicon.png">
+  <link rel="apple-touch-icon" href="/favicon/appicon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#ff6b9d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pistol Ponies">
+
+  <!-- Open Graph (Facebook, iMessage, Discord, etc.) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Pistol Ponies - 3D Online FPS">
+  <meta property="og:description"
+    content="A fast-paced 3D online multiplayer shooter. Play with friends, level up, and dominate the arena!">
+  <meta property="og:image" content="/splash.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://pistolponies.com">
+  <meta property="og:site_name" content="Pistol Ponies">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Pistol Ponies - 3D Online FPS">
+  <meta name="twitter:description"
+    content="A fast-paced 3D online multiplayer shooter. Play with friends, level up, and dominate the arena!">
+  <meta name="twitter:image" content="/splash.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <!-- Menu Screen -->
+  <div id="menu">
+    <!-- Main Menu -->
+    <div id="mainMenu" class="menu-screen">
+      <div class="menu-container">
+        <div class="logo-container">
+          <img src="/logo.png" alt="Pistol Ponies Logo" class="game-logo">
+        </div>
+        <p class="game-subtitle">3D Online Multiplayer Shooter</p>
+
+        <div class="menu-content">
+
+
+          <div class="input-group">
+            <label for="playerName">Player Name</label>
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+          </div>
+
+          <button id="playButton" class="btn btn-primary">
+            <span>🎮 PLAY NOW</span>
+          </button>
+
+          <button id="settingsButton" class="btn btn-secondary">
+            <span>⚙️ SETTINGS</span>
+          </button>
+        </div>
+
+        <div class="menu-footer">
+          <p>Controls: WASD/Arrows to move (Double tap to DASH), SPACE to jump, Mouse to aim, Click to shoot, Q/R to
+            reload</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lobby Screen -->
+    <div id="lobbyScreen" class="menu-screen" style="display: none;">
+      <div class="menu-container">
+        <h2>Waiting for Players...</h2>
+        <div class="lobby-content">
+          <div id="playerList" class="player-list">
+            <!-- Players will be added here dynamically -->
+          </div>
+          <div class="lobby-status">
+            <div class="spinner"></div>
+            <p>Connecting to server...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settingsScreen" class="menu-screen" style="display: none;">
+      <div class="menu-container">
+        <h2>Settings</h2>
+        <div class="settings-content">
+          <div class="input-group">
+            <label for="floorTexture">Floor Texture</label>
+            <select id="floorTexture" class="btn btn-secondary">
+              <option value="">Solid Color</option>
+              <option value="/assets/textures/concrete.png">Concrete</option>
+              <option value="/assets/textures/tiles.png">Sci-Fi Tiles</option>
+            </select>
+          </div>
+          <button id="soundToggle" class="btn btn-secondary">Sound: ON</button>
+          <button id="mobileSettingsButton" class="btn btn-secondary">📱 Mobile Controls</button>
+          <button id="backButton" class="btn btn-secondary">← Back to Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-Game Menu (ESC Menu) -->
+  <div id="ingameMenu" style="display: none;">
+    <div class="ingame-menu-container">
+      <h2 class="ingame-menu-title">⏸️ Paused</h2>
+      <p class="ingame-menu-subtitle">Press ESC to resume</p>
+
+      <div class="wallet-status-bar">
+        <div class="wallet-dot" id="menuWalletDot"></div>
+        <span class="wallet-status-text" id="menuWalletStatus">Wallet not connected</span>
+        <button id="menuConnectBtn" class="btn btn-wallet btn-small"
+          style="margin-left: 10px; padding: 5px 10px;">Connect</button>
+      </div>
+
+      <div class="menu-stats-display">
+        <h4>📊 Current Stats</h4>
+        <div class="player-name-display">
+          <span class="player-name-label">Player:</span>
+          <span class="player-name-value" id="menuPlayerName">-</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value" id="menuKills">0</div>
+            <div class="stat-label">Kills</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="menuLevel">1</div>
+            <div class="stat-label">Level</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="menuDeaths">0</div>
+            <div class="stat-label">Deaths</div>
+          </div>
+        </div>
+
+        <!-- Skill Stats -->
+        <div class="skill-stats-section">
+          <h4 class="skill-stats-title">⚡ Skills</h4>
+          <div class="skill-stats-grid">
+            <div class="skill-item"><span class="skill-icon">🏃</span> Speed: <span id="menuSpeed">0</span></div>
+            <div class="skill-item"><span class="skill-icon">❤️</span> Health: <span id="menuHealth">0</span></div>
+            <div class="skill-item"><span class="skill-icon">🔫</span> Ammo: <span id="menuAmmo">0</span></div>
+            <div class="skill-item"><span class="skill-icon">🦘</span> Jump: <span id="menuJump">0</span></div>
+            <div class="skill-item"><span class="skill-icon">💨</span> Dash: <span id="menuDash">0</span></div>
+            <div class="skill-item"><span class="skill-icon">🎯</span> Aim: <span id="menuAim">0</span></div>
+          </div>
+          <div class="skill-points-display">Skill Points: <span id="menuSkillPoints">0</span></div>
+        </div>
+      </div>
+
+      <div class="ingame-menu-buttons">
+        <button id="resumeBtn" class="btn-ingame btn-resume">▶️ Resume Game</button>
+        <button id="saveGameBtn" class="btn-ingame btn-save">💾 Save Game</button>
+        <button id="loadGameBtn" class="btn-ingame btn-load">📂 Load Game</button>
+        <button id="quitGameBtn" class="btn-ingame btn-quit">🚪 Quit to Menu</button>
+      </div>
+
+      <p class="save-fee-notice">Save costs ~0.000005 ETH on Base (~1¢)</p>
+
+      <div class="tx-status" id="txStatus"></div>
+    </div>
+  </div>
+
+  <!-- Game Canvas -->
+  <canvas id="gameCanvas" style="display: none;"></canvas>
+  <!-- UI Canvas -->
+  <canvas id="uiCanvas" style="display: none; pointer-events: none;"></canvas>
+
+  <!-- Pony Labs Footer (hidden during gameplay) -->
+  <footer class="pony-labs-footer" id="ponyLabsFooter">
+    <a href="https://labs.pxpony.com" target="_blank">
+      <span class="pony-icon">🐴</span>
+      Powered by Pony Labs
+    </a>
+    <span style="margin: 0 15px; color: rgba(255,255,255,0.3);">•</span>
+    <a href="/ads" style="color: rgba(255,255,255,0.5);">📺 Advertise In-Game</a>
+  </footer>
+
+  <!-- Load Game -->
+  <script type="module" src="/js/engine/Game.js"></script>
+
+  <script>
+    // Hide footer during gameplay
+    const footer = document.getElementById('ponyLabsFooter');
+    const observer = new MutationObserver(() => {
+      const gameCanvas = document.getElementById('gameCanvas');
+      footer.style.display = gameCanvas.style.display === 'none' ? 'block' : 'none';
+    });
+    observer.observe(document.getElementById('gameCanvas'), { attributes: true, attributeFilter: ['style'] });
+  </script>
+
+  <!-- Orientation Lock Overlay -->
+  <div id="orientationOverlay" style="display: none;">
+    <div class="orientation-content">
+      <div class="rotate-icon">📱</div>
+      <h2>Please Rotate Your Device</h2>
+      <p>Pistol Ponies is best played in Landscape mode.</p>
+    </div>
+  </div>
+</body>
+
+</html>

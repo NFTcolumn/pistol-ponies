@@ -144,7 +144,7 @@ export class HUD {
             { key: 'health', name: 'Health', desc: '+10 max HP', icon: '❤️' },
             { key: 'ammo', name: 'Ammo', desc: '+2 max bullets', icon: '🔫' },
             { key: 'jump', name: 'Jump', desc: '+10% height', icon: '🦘' },
-            { key: 'dash', name: 'Dash', desc: '+15% distance', icon: '💨' },
+            { key: 'dash', name: 'Dash', desc: '+2.5% distance', icon: '💨' },
             { key: 'aim', name: 'Aim', desc: '-10% spread', icon: '🎯' }
         ];
 
@@ -158,12 +158,13 @@ export class HUD {
             ctx.fillText(`[${i + 1}] ${stat.icon} ${stat.name}`, panelX + 15, y);
 
             ctx.fillStyle = '#4ecdc4';
-            ctx.textAlign = 'right';
-            ctx.fillText(`${value}`, panelX + panelWidth - 60, y);
+            ctx.textAlign = 'center';
+            ctx.fillText(`${value}`, panelX + panelWidth - 130, y);
 
             ctx.fillStyle = '#888';
             ctx.font = '11px Inter, sans-serif';
-            ctx.fillText(stat.desc, panelX + panelWidth - 15, y);
+            ctx.textAlign = 'right';
+            ctx.fillText(stat.desc, panelX + panelWidth - 10, y);
 
             y += 28;
         });
