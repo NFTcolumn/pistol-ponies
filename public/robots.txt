@@ -27,4 +27,4 @@ User-agent: Bingbot
 Allow: /
 
 # Sitemap
-Sitemap: https://pistol.pxponies.com/sitemap.xml
+Sitemap: https://pistol.pxpony.com/sitemap.xml
