@@ -93,6 +93,9 @@ export class HUD {
             this.drawHitVignette(ctx, width, height);
         }
 
+        // Crosshair
+        this.drawCrosshair(ctx, width / 2, height / 2);
+
         // Skill point allocation panel (if player has points)
         if (player.skillPoints > 0) {
             this.drawSkillPanel(ctx, width, height, player);
@@ -188,32 +191,32 @@ export class HUD {
         // Border
         ctx.strokeStyle = GameConfig.COLORS.PRIMARY;
         ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, 200, 80);
+        ctx.strokeRect(0, 0, 200, 80);
 
         // Level badge
         ctx.fillStyle = '#ff6b9d';
         ctx.font = 'bold 20px Inter, sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText(`LV ${player.level || 1}`, x + 190, y + 25);
+        ctx.fillText(`LV ${player.level || 1}`, 190, 25);
 
         // Kill streak indicator
         if (player.killStreak >= 2) {
             ctx.fillStyle = '#ffe66d';
             ctx.font = 'bold 14px Inter, sans-serif';
-            ctx.fillText(`🔥 x${player.killStreak}`, x + 190, y + 75);
+            ctx.fillText(`🔥 x${player.killStreak}`, 190, 75);
         }
 
         // Health label
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 16px Inter, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('HEALTH', x + 10, y + 25);
+        ctx.fillText('HEALTH', 10, 25);
 
         // Health bar
         const barWidth = 180;
         const barHeight = 30;
-        const barX = x + 10;
-        const barY = y + 35;
+        const barX = 10;
+        const barY = 35;
 
         // Background
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -260,13 +263,13 @@ export class HUD {
         // Border
         ctx.strokeStyle = GameConfig.COLORS.ACCENT;
         ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, 200, 80);
+        ctx.strokeRect(0, 0, 200, 80);
 
         // Weapon name
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 16px Inter, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(weapon.config.name.toUpperCase(), x + 10, y + 25);
+        ctx.fillText(weapon.config.name.toUpperCase(), 10, 25);
 
         // Ammo display
         ctx.font = 'bold 32px Inter, sans-serif';
@@ -274,10 +277,10 @@ export class HUD {
 
         if (weapon.reloading) {
             ctx.fillStyle = GameConfig.COLORS.ACCENT;
-            ctx.fillText('RELOADING...', x + 190, y + 60);
+            ctx.fillText('RELOADING...', 190, 60);
         } else {
             ctx.fillStyle = weapon.ammo > 0 ? '#fff' : GameConfig.COLORS.DANGER;
-            ctx.fillText(`${weapon.ammo}/${weapon.config.magazineSize}`, x + 190, y + 60);
+            ctx.fillText(`${weapon.ammo}/${weapon.config.magazineSize}`, 190, 60);
         }
 
         // Reload bar
@@ -285,8 +288,8 @@ export class HUD {
             const progress = weapon.getReloadProgress(Date.now());
             const barWidth = 180;
             const barHeight = 5;
-            const barX = x + 10;
-            const barY = y + 70;
+            const barX = 10;
+            const barY = 70;
 
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(barX, barY, barWidth, barHeight);

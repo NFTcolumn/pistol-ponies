@@ -49,8 +49,9 @@ export class MobileControls {
             opacity: 0.6,
             joystickPosition: { left: 30, bottom: 30 },
             aimPosition: { right: 30, bottom: 30 },
-            jumpPosition: { right: 30, bottom: 160 },
-            reloadPosition: { right: 110, bottom: 160 }
+            jumpPosition: { right: 30, bottom: 200 },
+            reloadPosition: { right: 120, bottom: 200 },
+            shootPosition: { right: 30, bottom: 80 }
         };
     }
 
@@ -120,6 +121,7 @@ export class MobileControls {
         // Create functional buttons
         this.createButton('jump', '⬆️', this.settings.jumpPosition);
         this.createButton('reload', '🔄', this.settings.reloadPosition);
+        this.createButton('shoot', '🔥', this.settings.shootPosition);
 
         // Add Menu button in top right
         const menuBtn = this.createButton('menu', '⏸️', { right: 20, top: 20 });
@@ -399,6 +401,7 @@ export class MobileControls {
         switch (action) {
             case 'jump': this.jumpPressed = true; break;
             case 'reload': this.reloadPressed = true; break;
+            case 'shoot': this.shootHeld = true; break;
             case 'menu': this.game.toggleIngameMenu(); break;
         }
     }
@@ -411,6 +414,7 @@ export class MobileControls {
         switch (action) {
             case 'jump': this.jumpPressed = false; break;
             case 'reload': this.reloadPressed = false; break;
+            case 'shoot': this.shootHeld = false; break;
         }
     }
 
