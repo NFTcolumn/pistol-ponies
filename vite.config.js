@@ -31,6 +31,7 @@ export default defineConfig({
             input: {
                 main: resolve(__dirname, 'index.html'),
                 game: resolve(__dirname, 'game.html'),
+                leaderboard: resolve(__dirname, 'leaderboard.html'),
                 ads: resolve(__dirname, 'ads/index.html'),
             },
             output: {

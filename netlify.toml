@@ -35,6 +35,17 @@
   to = "/game.html"
   status = 200
 
+# Leaderboard page redirects
+[[redirects]]
+  from = "/leaderboard"
+  to = "/leaderboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/leaderboard/"
+  to = "/leaderboard.html"
+  status = 200
+
 # SPA fallback - only for routes that don't match files
 [[redirects]]
   from = "/*"
