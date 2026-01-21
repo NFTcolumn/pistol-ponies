@@ -923,3 +923,14 @@ body {
     overflow-y: auto;
   }
 }
+
+/* ===== SEO CONTENT (HIDDEN FOR USERS, VISIBLE TO CRAWLERS) ===== */
+.seo-content {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  /* Remain accessible for screen readers and crawlers */
+}
