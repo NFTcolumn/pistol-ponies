@@ -42,9 +42,9 @@ export class Player {
         const mouseSensitivity = 0.002;
 
         if (mobileOverrides && mobileOverrides.aimDelta) {
-            // Mobile gyro aim
-            this.angle += mobileOverrides.aimDelta.x * mouseSensitivity * 2;
-            this.pitch -= mobileOverrides.aimDelta.y * mouseSensitivity * 2;
+            // Mobile stick aim
+            this.angle += mobileOverrides.aimDelta.x * deltaTime;
+            this.pitch -= mobileOverrides.aimDelta.y * deltaTime;
         } else {
             // Desktop mouse aim
             this.angle += input.mouse.movementX * mouseSensitivity;

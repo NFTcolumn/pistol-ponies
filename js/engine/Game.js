@@ -415,11 +415,11 @@ export class Game {
         // Fall back to mobile controls
         else if (this.mobileControls.enabled) {
             // Get movement from joystick
-            const joystickMove = this.mobileControls.joystick.active
+            const joystickMove = this.mobileControls.moveJoystick.active
                 ? this.mobileControls.getMovementVector()
                 : null;
 
-            // Get touch aim delta
+            // Get aim from joystick
             const aimDelta = this.mobileControls.getAimDelta();
 
             if (joystickMove || aimDelta) {
@@ -457,7 +457,7 @@ export class Game {
             const gpMove = this.gamepad.getMovementVector();
             movement.x = gpMove.x;
             movement.z = gpMove.z;
-        } else if (this.mobileControls.enabled && this.mobileControls.joystick.active) {
+        } else if (this.mobileControls.enabled && this.mobileControls.moveJoystick.active) {
             const mobileMove = this.mobileControls.getMovementVector();
             movement.x = mobileMove.x;
             movement.z = mobileMove.z;

@@ -8,6 +8,7 @@ export class HUD {
         this.maxKillFeedItems = 5;
         this.killFeedDuration = 5000;
         this.hitVignetteAlpha = 0; // For hit feedback effect
+        this.isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     }
 
     addKill(killerName, victimName, weaponType) {
@@ -47,22 +48,27 @@ export class HUD {
         const width = this.canvas.width;
         const height = this.canvas.height;
 
-        // Health bar (bottom left)
-        this.drawHealthSection(ctx, player, 20, height - 100);
-
-        // Ammo counter (bottom right)
-        this.drawAmmoSection(ctx, player, width - 220, height - 100);
-
-        // Crosshair
-        this.drawCrosshair(ctx, width / 2, height / 2);
+        const scale = this.isMobile ? 0.75 : 1.0;
 
         // Minimap (top left)
         if (mapData) {
-            this.drawMinimap(ctx, player, players, mapData, 20, 20);
+            this.drawMinimap(ctx, player, players, mapData, 20, 20, scale);
         }
 
-        // Kill feed (top right)
-        this.drawKillFeed(ctx, width - 320, 20);
+        // Health bar (below minimap on mobile, bottom left on desktop)
+        const healthX = 20;
+        const healthY = this.isMobile ? 20 + (180 * scale) + 15 : height - 100;
+        this.drawHealthSection(ctx, player, healthX, healthY, scale);
+
+        // Ammo counter (top right on mobile, bottom right on desktop)
+        const ammoX = this.isMobile ? width - (200 * scale) - 20 : width - 220;
+        const ammoY = this.isMobile ? 20 : height - 100;
+        this.drawAmmoSection(ctx, player, ammoX, ammoY, scale);
+
+        // Kill feed (top right below ammo on mobile, desktop stays same)
+        const killFeedX = this.isMobile ? width - (300 * scale) - 20 : width - 320;
+        const killFeedY = this.isMobile ? ammoY + (80 * scale) + 20 : 20;
+        this.drawKillFeed(ctx, killFeedX, killFeedY, scale);
 
         // Scoreboard hint (top center)
         ctx.save();
@@ -170,10 +176,14 @@ export class HUD {
         ctx.restore();
     }
 
-    drawHealthSection(ctx, player, x, y) {
+    drawHealthSection(ctx, player, x, y, scale = 1.0) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+
         // Background
         ctx.fillStyle = GameConfig.COLORS.UI_BG;
-        ctx.fillRect(x, y, 200, 80);
+        ctx.fillRect(0, 0, 200, 80);
 
         // Border
         ctx.strokeStyle = GameConfig.COLORS.PRIMARY;
@@ -233,14 +243,19 @@ export class HUD {
         ctx.font = 'bold 18px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(Math.ceil(player.health), barX + barWidth / 2, barY + barHeight / 2 + 6);
+        ctx.restore();
     }
 
-    drawAmmoSection(ctx, player, x, y) {
+    drawAmmoSection(ctx, player, x, y, scale = 1.0) {
         const weapon = player.weapon;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
 
         // Background
         ctx.fillStyle = GameConfig.COLORS.UI_BG;
-        ctx.fillRect(x, y, 200, 80);
+        ctx.fillRect(0, 0, 200, 80);
 
         // Border
         ctx.strokeStyle = GameConfig.COLORS.ACCENT;
@@ -279,6 +294,7 @@ export class HUD {
             ctx.fillStyle = GameConfig.COLORS.ACCENT;
             ctx.fillRect(barX, barY, barWidth * progress, barHeight);
         }
+        ctx.restore();
     }
 
     drawCrosshair(ctx, x, y) {
@@ -322,8 +338,8 @@ export class HUD {
         ctx.globalAlpha = 1;
     }
 
-    drawMinimap(ctx, localPlayer, players, mapData, x, y) {
-        const size = 180;
+    drawMinimap(ctx, localPlayer, players, mapData, x, y, scaleHUD = 1.0) {
+        const size = 180 * scaleHUD;
         const scale = size / Math.max(mapData.width, mapData.height);
 
         ctx.save();
@@ -373,12 +389,14 @@ export class HUD {
         ctx.restore();
     }
 
-    drawKillFeed(ctx, x, y) {
+    drawKillFeed(ctx, x, y, scale = 1.0) {
         ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
 
         for (let i = 0; i < this.killFeed.length; i++) {
             const item = this.killFeed[i];
-            const itemY = y + i * 35;
+            const itemY = i * 35;
             const age = Date.now() - item.time;
             const alpha = age > 4000 ? 1 - (age - 4000) / 1000 : 1;
 
@@ -386,18 +404,18 @@ export class HUD {
 
             // Background
             ctx.fillStyle = GameConfig.COLORS.UI_BG;
-            ctx.fillRect(x, itemY, 300, 30);
+            ctx.fillRect(0, itemY, 300, 30);
 
             // Border
             ctx.strokeStyle = GameConfig.COLORS.DANGER;
             ctx.lineWidth = 1;
-            ctx.strokeRect(x, itemY, 300, 30);
+            ctx.strokeRect(0, itemY, 300, 30);
 
             // Text
             ctx.fillStyle = '#fff';
             ctx.font = '14px Inter, sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText(`${item.killer} ☠ ${item.victim}`, x + 10, itemY + 20);
+            ctx.fillText(`${item.killer} ☠ ${item.victim}`, 10, itemY + 20);
         }
 
         ctx.restore();

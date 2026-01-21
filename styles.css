@@ -800,6 +800,80 @@ body {
   transition: transform 0.1s ease, background 0.1s ease;
 }
 
+/* Orientation Overlay */
+#orientationOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #1a1a2e;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+}
+
+.orientation-content {
+  padding: 40px;
+}
+
+.rotate-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  animation: rotatePhone 2s ease-in-out infinite;
+}
+
+@keyframes rotatePhone {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(90deg);
+  }
+
+  75% {
+    transform: rotate(90deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+#orientationOverlay h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #ff6b9d;
+}
+
+#orientationOverlay p {
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+/* Hide game elements when in portrait on mobile */
+@media (orientation: portrait) and (max-width: 768px) {
+  #orientationOverlay {
+    display: flex !important;
+  }
+}
+
+@media (orientation: landscape) or (min-width: 769px) {
+  #orientationOverlay {
+    display: none !important;
+  }
+}
+
+/* Aim Stick Customization */
+.mobile-joystick-knob.aim-knob {
+  background: rgba(78, 205, 196, 0.8);
+  box-shadow: 0 0 15px rgba(78, 205, 196, 0.6);
+}
+
 .mobile-stat-btn:active {
   transform: scale(0.9) !important;
 }
