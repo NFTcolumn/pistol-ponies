@@ -452,6 +452,13 @@ export class Game {
             }
         }
 
+        // Handle desktop dash (double-tap WASD)
+        const desktopDash = this.input.getAndResetDash();
+        if (desktopDash) {
+            this.localPlayer.isDashing = true;
+            setTimeout(() => { if (this.localPlayer) this.localPlayer.isDashing = false; }, 200);
+        }
+
         // Player logic - pass input overrides
         this.localPlayer.update(deltaTime, this.input, inputOverrides);
 

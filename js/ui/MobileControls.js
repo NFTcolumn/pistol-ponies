@@ -53,6 +53,7 @@ export class MobileControls {
             moveSensitivity: 1.0,
             aimSensitivity: 1.0,
             leftyMode: false,
+            dynamicJoysticks: true,
             joystickPosition: { left: 40, bottom: 40 },
             aimPosition: { right: 40, bottom: 40 },
             jumpPosition: { right: 40, bottom: 220 },
@@ -125,6 +126,12 @@ export class MobileControls {
         this.aimJoystickBase = this.createJoystickUI('aim', aimPos);
         this.aimJoystickKnob = this.aimJoystickBase.querySelector('.mobile-joystick-knob');
         this.aimJoystickKnob.classList.add('aim-knob');
+
+        // Apply static visibility if needed
+        if (!this.settings.dynamicJoysticks) {
+            this.moveJoystickBase.style.display = 'block';
+            this.aimJoystickBase.style.display = 'block';
+        }
 
         // Scaling factor for buttons based on HUD scale
         const s = this.settings.hudScale;
@@ -356,9 +363,26 @@ export class MobileControls {
             }
 
             if (isMoveSide && !this.moveJoystick.active) {
-                this.onJoystickStart(touch, 'move');
+                if (this.settings.dynamicJoysticks) {
+                    this.onJoystickStart(touch, 'move');
+                } else {
+                    // Static mode: check if touch is inside the existing base
+                    const rect = this.moveJoystickBase.getBoundingClientRect();
+                    const dist = Math.sqrt(Math.pow(x - (rect.left + rect.width / 2), 2) + Math.pow(y - (rect.top + rect.height / 2), 2));
+                    if (dist < rect.width / 2 * 1.5) { // 1.5x buffer for easier pickup
+                        this.onJoystickStart(touch, 'move');
+                    }
+                }
             } else if (!isMoveSide && !this.aimJoystick.active) {
-                this.onJoystickStart(touch, 'aim');
+                if (this.settings.dynamicJoysticks) {
+                    this.onJoystickStart(touch, 'aim');
+                } else {
+                    const rect = this.aimJoystickBase.getBoundingClientRect();
+                    const dist = Math.sqrt(Math.pow(x - (rect.left + rect.width / 2), 2) + Math.pow(y - (rect.top + rect.height / 2), 2));
+                    if (dist < rect.width / 2 * 1.5) {
+                        this.onJoystickStart(touch, 'aim');
+                    }
+                }
             }
         }
     }
@@ -402,13 +426,21 @@ export class MobileControls {
         state.active = true;
 
         // Dynamic position (floating joystick)
-        base.style.display = 'block';
-        base.style.left = `${touch.clientX - size / 2}px`;
-        base.style.top = `${touch.clientY - size / 2}px`;
-        base.style.right = 'auto';
-        base.style.bottom = 'auto';
+        if (this.settings.dynamicJoysticks) {
+            base.style.display = 'block';
+            base.style.left = `${touch.clientX - size / 2}px`;
+            base.style.top = `${touch.clientY - size / 2}px`;
+            base.style.right = 'auto';
+            base.style.bottom = 'auto';
+            state.center = { x: touch.clientX, y: touch.clientY };
+        } else {
+            const rect = base.getBoundingClientRect();
+            state.center = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+        }
 
-        state.center = { x: touch.clientX, y: touch.clientY };
         state.radius = size / 2;
 
         const now = Date.now();
@@ -456,7 +488,10 @@ export class MobileControls {
             const base = type === 'move' ? this.moveJoystickBase : this.aimJoystickBase;
             const knob = type === 'move' ? this.moveJoystickKnob : this.aimJoystickKnob;
             knob.style.transform = 'translate(0, 0)';
-            base.style.display = 'none';
+
+            if (this.settings.dynamicJoysticks) {
+                base.style.display = 'none';
+            }
 
             if (type === 'aim') {
                 this.shootHeld = false;
@@ -630,6 +665,11 @@ export class MobileControls {
                 <input type="checkbox" id="set-lefty" ${this.settings.leftyMode ? 'checked' : ''} style="width: 24px; height: 24px;">
             </div>
 
+            <div class="setting-item" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <label>Floating Joysticks</label>
+                <input type="checkbox" id="set-dynamic" ${this.settings.dynamicJoysticks ? 'checked' : ''} style="width: 24px; height: 24px;">
+            </div>
+
             <button id="closeMobileSettings" class="btn btn-primary" style="width: 100%; margin-top: 10px;">SAVE & CLOSE</button>
         `;
 
@@ -655,6 +695,10 @@ export class MobileControls {
 
         modal.querySelector('#set-lefty').addEventListener('change', (e) => {
             this.settings.leftyMode = e.target.checked;
+        });
+
+        modal.querySelector('#set-dynamic').addEventListener('change', (e) => {
+            this.settings.dynamicJoysticks = e.target.checked;
         });
 
         modal.querySelector('#closeMobileSettings').addEventListener('click', () => {
