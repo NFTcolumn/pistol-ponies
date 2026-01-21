@@ -6,8 +6,8 @@ export class MobileControls {
         this.container = null;
 
         // Control states
-        this.moveJoystick = { x: 0, z: 0, active: false, touchId: null };
-        this.aimJoystick = { x: 0, y: 0, active: false, touchId: null };
+        this.moveJoystick = { x: 0, z: 0, active: false, touchId: null, center: { x: 0, y: 0 } };
+        this.aimJoystick = { x: 0, y: 0, active: false, touchId: null, center: { x: 0, y: 0 } };
         this.shootHeld = false;
         this.jumpPressed = false;
         this.reloadPressed = false;
@@ -311,10 +311,23 @@ export class MobileControls {
 
     setupEventListeners() {
         // Full screen touch tracking for floating joysticks
-        document.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
-        document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
-        document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
-        document.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
+        this.boundHandleTouchStart = this.handleTouchStart.bind(this);
+        this.boundHandleTouchMove = this.handleTouchMove.bind(this);
+        this.boundHandleTouchEnd = this.handleTouchEnd.bind(this);
+
+        document.addEventListener('touchstart', this.boundHandleTouchStart, { passive: false });
+        document.addEventListener('touchmove', this.boundHandleTouchMove, { passive: false });
+        document.addEventListener('touchend', this.boundHandleTouchEnd, { passive: false });
+        document.addEventListener('touchcancel', this.boundHandleTouchEnd, { passive: false });
+    }
+
+    removeEventListeners() {
+        if (this.boundHandleTouchStart) {
+            document.removeEventListener('touchstart', this.boundHandleTouchStart);
+            document.removeEventListener('touchmove', this.boundHandleTouchMove);
+            document.removeEventListener('touchend', this.boundHandleTouchEnd);
+            document.removeEventListener('touchcancel', this.boundHandleTouchEnd);
+        }
     }
 
     handleTouchStart(e) {
@@ -408,9 +421,10 @@ export class MobileControls {
 
         if (type === 'move') {
             if (now - this.lastTapTime < this.doubleTapThreshold) {
-                // Flick to dash (any direction since it's start of touch)
+                // Flick to dash: if second tap is far from previous start
+                // Or if we already have a joystick direction
                 this.isDashing = true;
-                setTimeout(() => { this.isDashing = false; }, 100);
+                setTimeout(() => { this.isDashing = false; }, 150);
             }
         }
         this.lastTapTime = now;
@@ -652,6 +666,7 @@ export class MobileControls {
 
     rebuildUI() {
         if (this.container) this.container.remove();
+        this.removeEventListeners();
         this.createUI();
         this.setupEventListeners();
         if (this.game.gameState === 'playing') this.show();
