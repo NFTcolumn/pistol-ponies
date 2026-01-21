@@ -444,6 +444,12 @@ export class Game {
                     stat: statToAllocate
                 });
             }
+
+            // Handle mobile flick-to-dash
+            if (this.mobileControls.getDash()) {
+                this.localPlayer.isDashing = true;
+                setTimeout(() => { if (this.localPlayer) this.localPlayer.isDashing = false; }, 200);
+            }
         }
 
         // Player logic - pass input overrides

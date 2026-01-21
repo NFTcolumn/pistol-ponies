@@ -13,10 +13,12 @@ export class MobileControls {
         this.reloadPressed = false;
         this.statPressed = null;
 
-        // Double tap / Auto fire tracking
+        // Double tap / Flick to dash tracking
         this.lastTapTime = 0;
         this.doubleTapThreshold = 300; // ms
+        this.flickThreshold = 0.8; // 80% distance for flick-to-dash
         this.isAutoFiring = false;
+        this.isDashing = false;
 
         // Orientation
         this.isPortrait = false;
@@ -47,11 +49,15 @@ export class MobileControls {
             joystickSize: 120,
             buttonSize: 60,
             opacity: 0.6,
-            joystickPosition: { left: 30, bottom: 30 },
-            aimPosition: { right: 30, bottom: 30 },
-            jumpPosition: { right: 30, bottom: 200 },
-            reloadPosition: { right: 120, bottom: 200 },
-            shootPosition: { right: 30, bottom: 80 }
+            hudScale: 1.0,
+            moveSensitivity: 1.0,
+            aimSensitivity: 1.0,
+            leftyMode: false,
+            joystickPosition: { left: 40, bottom: 40 },
+            aimPosition: { right: 40, bottom: 40 },
+            jumpPosition: { right: 40, bottom: 220 },
+            reloadPosition: { right: 140, bottom: 220 },
+            shootPosition: { right: 40, bottom: 90 }
         };
     }
 
@@ -109,22 +115,41 @@ export class MobileControls {
         `;
         document.body.appendChild(this.container);
 
-        // Create Move Joystick (Left)
-        this.moveJoystickBase = this.createJoystickUI('move', this.settings.joystickPosition);
+        // Create Move Joystick (Left unless lefty)
+        const movePos = this.settings.leftyMode ? this.settings.aimPosition : this.settings.joystickPosition;
+        this.moveJoystickBase = this.createJoystickUI('move', movePos);
         this.moveJoystickKnob = this.moveJoystickBase.querySelector('.mobile-joystick-knob');
 
-        // Create Aim Joystick (Right)
-        this.aimJoystickBase = this.createJoystickUI('aim', this.settings.aimPosition);
+        // Create Aim Joystick (Right unless lefty)
+        const aimPos = this.settings.leftyMode ? this.settings.joystickPosition : this.settings.aimPosition;
+        this.aimJoystickBase = this.createJoystickUI('aim', aimPos);
         this.aimJoystickKnob = this.aimJoystickBase.querySelector('.mobile-joystick-knob');
         this.aimJoystickKnob.classList.add('aim-knob');
 
-        // Create functional buttons
-        this.createButton('jump', '⬆️', this.settings.jumpPosition);
-        this.createButton('reload', '🔄', this.settings.reloadPosition);
-        this.createButton('shoot', '🔥', this.settings.shootPosition);
+        // Scaling factor for buttons based on HUD scale
+        const s = this.settings.hudScale;
 
-        // Add Menu button in top right
-        const menuBtn = this.createButton('menu', '⏸️', { right: 20, top: 20 });
+        // Create functional buttons
+        // If lefty, swap button horizontal sides
+        const hFlip = (pos) => {
+            if (!this.settings.leftyMode) return pos;
+            const newPos = { ...pos };
+            if (pos.right !== undefined) {
+                newPos.left = pos.right;
+                delete newPos.right;
+            } else if (pos.left !== undefined) {
+                newPos.right = pos.left;
+                delete newPos.left;
+            }
+            return newPos;
+        };
+
+        this.createButton('jump', '⬆️', hFlip(this.settings.jumpPosition));
+        this.createButton('reload', '🔄', hFlip(this.settings.reloadPosition));
+        this.createButton('shoot', '🔥', hFlip(this.settings.shootPosition));
+
+        // Add Menu button in top right (or top left if lefty)
+        const menuBtn = this.createButton('menu', '⏸️', hFlip({ right: 20, top: 20 }));
         menuBtn.style.background = 'rgba(255, 107, 157, 0.7)';
         menuBtn.style.border = '3px solid rgba(255, 107, 157, 0.9)';
 
@@ -132,7 +157,7 @@ export class MobileControls {
     }
 
     createJoystickUI(name, position) {
-        const size = this.settings.joystickSize;
+        const size = this.settings.joystickSize * this.settings.hudScale;
         const base = document.createElement('div');
         base.className = `mobile-joystick-base mobile-joystick-${name}`;
 
@@ -142,15 +167,18 @@ export class MobileControls {
         if (position.bottom !== undefined) posStyle += `bottom: ${position.bottom}px;`;
         if (position.top !== undefined) posStyle += `top: ${position.top}px;`;
 
+        const opacity = this.settings.opacity;
+
         base.style.cssText = `
             position: fixed;
             ${posStyle}
             width: ${size}px;
             height: ${size}px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, ${this.settings.opacity * 0.3});
-            border: 3px solid rgba(255, 255, 255, ${this.settings.opacity});
-            pointer-events: auto;
+            background: rgba(255, 255, 255, ${opacity * 0.3});
+            border: 3px solid rgba(255, 255, 255, ${opacity});
+            pointer-events: none;
+            display: none;
             touch-action: none;
         `;
 
@@ -176,7 +204,7 @@ export class MobileControls {
     }
 
     createButton(name, emoji, position) {
-        const size = this.settings.buttonSize;
+        const size = this.settings.buttonSize * this.settings.hudScale;
         const btn = document.createElement('div');
         btn.className = `mobile-btn mobile-btn-${name}`;
         btn.dataset.action = name;
@@ -187,14 +215,16 @@ export class MobileControls {
         if (position.bottom !== undefined) posStyle += `bottom: ${position.bottom}px;`;
         if (position.top !== undefined) posStyle += `top: ${position.top}px;`;
 
+        const opacity = this.settings.opacity;
+
         btn.style.cssText = `
             position: fixed;
             ${posStyle}
             width: ${size}px;
             height: ${size}px;
             border-radius: 50%;
-            background: rgba(78, 205, 196, ${this.settings.opacity * 0.5});
-            border: 3px solid rgba(78, 205, 196, ${this.settings.opacity});
+            background: rgba(78, 205, 196, ${opacity * 0.5});
+            border: 3px solid rgba(78, 205, 196, ${opacity});
             display: flex;
             align-items: center;
             justify-content: center;
@@ -280,52 +310,110 @@ export class MobileControls {
     }
 
     setupEventListeners() {
-        // Move Joystick
-        this.moveJoystickBase.addEventListener('touchstart', (e) => this.onJoystickStart(e, 'move'), { passive: false });
-        this.moveJoystickBase.addEventListener('touchmove', (e) => this.onJoystickMove(e, 'move'), { passive: false });
-        this.moveJoystickBase.addEventListener('touchend', (e) => this.onJoystickEnd(e, 'move'), { passive: false });
-        this.moveJoystickBase.addEventListener('touchcancel', (e) => this.onJoystickEnd(e, 'move'), { passive: false });
-
-        // Aim Joystick
-        this.aimJoystickBase.addEventListener('touchstart', (e) => this.onJoystickStart(e, 'aim'), { passive: false });
-        this.aimJoystickBase.addEventListener('touchmove', (e) => this.onJoystickMove(e, 'aim'), { passive: false });
-        this.aimJoystickBase.addEventListener('touchend', (e) => this.onJoystickEnd(e, 'aim'), { passive: false });
-        this.aimJoystickBase.addEventListener('touchcancel', (e) => this.onJoystickEnd(e, 'aim'), { passive: false });
-
-        // Buttons
-        const buttons = this.container.querySelectorAll('.mobile-btn');
-        buttons.forEach(btn => {
-            btn.addEventListener('touchstart', (e) => this.onButtonStart(e), { passive: false });
-            btn.addEventListener('touchend', (e) => this.onButtonEnd(e), { passive: false });
-            btn.addEventListener('touchcancel', (e) => this.onButtonEnd(e), { passive: false });
-        });
+        // Full screen touch tracking for floating joysticks
+        document.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+        document.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
     }
 
-    onJoystickStart(e, type) {
-        e.preventDefault();
-        const touch = e.changedTouches[0];
+    handleTouchStart(e) {
+        if (this.game.gameState !== 'playing' || this.game.ingameMenu.isVisible()) return;
+
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const touch = e.changedTouches[i];
+            const x = touch.clientX;
+            const y = touch.clientY;
+            const width = window.innerWidth;
+
+            // Determine which side of screen was touched
+            const isLeftHalf = x < width / 2;
+            const isMoveSide = this.settings.leftyMode ? !isLeftHalf : isLeftHalf;
+
+            // Check if touch is on a button
+            const target = document.elementFromPoint(x, y);
+            const btn = target?.closest('.mobile-btn') || target?.closest('.mobile-stat-btn');
+
+            if (btn) {
+                if (btn.classList.contains('mobile-btn')) {
+                    this.onButtonStart({ target: btn, preventDefault: () => { } });
+                }
+                // Stat buttons have their own listeners added in createStatButtons
+                continue;
+            }
+
+            if (isMoveSide && !this.moveJoystick.active) {
+                this.onJoystickStart(touch, 'move');
+            } else if (!isMoveSide && !this.aimJoystick.active) {
+                this.onJoystickStart(touch, 'aim');
+            }
+        }
+    }
+
+    handleTouchMove(e) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const touch = e.changedTouches[i];
+            if (touch.identifier === this.moveJoystick.touchId) {
+                this.updateJoystick(touch.clientX, touch.clientY, 'move');
+            } else if (touch.identifier === this.aimJoystick.touchId) {
+                this.updateJoystick(touch.clientX, touch.clientY, 'aim');
+            }
+        }
+    }
+
+    handleTouchEnd(e) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const touch = e.changedTouches[i];
+
+            // Check if it was a button touch
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            const btn = target?.closest('.mobile-btn');
+            if (btn) {
+                this.onButtonEnd({ target: btn, preventDefault: () => { } });
+            }
+
+            if (touch.identifier === this.moveJoystick.touchId) {
+                this.onJoystickEnd(touch, 'move');
+            } else if (touch.identifier === this.aimJoystick.touchId) {
+                this.onJoystickEnd(touch, 'aim');
+            }
+        }
+    }
+
+    onJoystickStart(touch, type) {
         const state = type === 'move' ? this.moveJoystick : this.aimJoystick;
         const base = type === 'move' ? this.moveJoystickBase : this.aimJoystickBase;
+        const size = this.settings.joystickSize * this.settings.hudScale;
 
         state.touchId = touch.identifier;
         state.active = true;
 
-        const rect = base.getBoundingClientRect();
-        state.center = {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2
-        };
-        state.radius = rect.width / 2;
+        // Dynamic position (floating joystick)
+        base.style.display = 'block';
+        base.style.left = `${touch.clientX - size / 2}px`;
+        base.style.top = `${touch.clientY - size / 2}px`;
+        base.style.right = 'auto';
+        base.style.bottom = 'auto';
 
+        state.center = { x: touch.clientX, y: touch.clientY };
+        state.radius = size / 2;
+
+        const now = Date.now();
         if (type === 'aim') {
-            const now = Date.now();
             if (now - this.lastTapTime < this.doubleTapThreshold) {
-                // Double tap detected!
                 this.shootHeld = true;
-                this.isAutoFiring = true; // Hold for auto
+                this.isAutoFiring = true;
             }
-            this.lastTapTime = now;
         }
+
+        if (type === 'move') {
+            if (now - this.lastTapTime < this.doubleTapThreshold) {
+                // Flick to dash (any direction since it's start of touch)
+                this.isDashing = true;
+                setTimeout(() => { this.isDashing = false; }, 100);
+            }
+        }
+        this.lastTapTime = now;
 
         this.updateJoystick(touch.clientX, touch.clientY, type);
     }
@@ -342,25 +430,23 @@ export class MobileControls {
         }
     }
 
-    onJoystickEnd(e, type) {
-        e.preventDefault();
+    onJoystickEnd(touch, type) {
         const state = type === 'move' ? this.moveJoystick : this.aimJoystick;
-        for (let i = 0; i < e.changedTouches.length; i++) {
-            if (e.changedTouches[i].identifier === state.touchId) {
-                state.touchId = null;
-                state.active = false;
-                state.x = 0;
-                state.y = 0;
-                if (type === 'move') state.z = 0;
+        if (touch.identifier === state.touchId) {
+            state.touchId = null;
+            state.active = false;
+            state.x = 0;
+            state.y = 0;
+            if (type === 'move') state.z = 0;
 
-                const knob = type === 'move' ? this.moveJoystickKnob : this.aimJoystickKnob;
-                knob.style.transform = 'translate(0, 0)';
+            const base = type === 'move' ? this.moveJoystickBase : this.aimJoystickBase;
+            const knob = type === 'move' ? this.moveJoystickKnob : this.aimJoystickKnob;
+            knob.style.transform = 'translate(0, 0)';
+            base.style.display = 'none';
 
-                if (type === 'aim') {
-                    this.shootHeld = false;
-                    this.isAutoFiring = false;
-                }
-                break;
+            if (type === 'aim') {
+                this.shootHeld = false;
+                this.isAutoFiring = false;
             }
         }
     }
@@ -419,17 +505,20 @@ export class MobileControls {
     }
 
     getMovementVector() {
-        return { x: this.moveJoystick.x, z: this.moveJoystick.z };
+        if (!this.moveJoystick.active) return { x: 0, z: 0 };
+        return {
+            x: this.moveJoystick.x * this.settings.moveSensitivity,
+            z: this.moveJoystick.z * this.settings.moveSensitivity
+        };
     }
 
     getAimDelta() {
-        // Stick aim returns direct values that will be scaled by sensitivity
         if (!this.aimJoystick.active) return null;
-        // Adjust sensitivity for the stick (it's continuous, so we need a factor)
-        const sensitivity = 5.0;
+        // Sensitivity scaling for analog stick
+        const baseSensitivity = 5.0;
         return {
-            x: this.aimJoystick.x * sensitivity,
-            y: this.aimJoystick.y * sensitivity
+            x: this.aimJoystick.x * baseSensitivity * this.settings.aimSensitivity,
+            y: this.aimJoystick.y * baseSensitivity * this.settings.aimSensitivity
         };
     }
 
@@ -439,6 +528,14 @@ export class MobileControls {
 
     isJumpHeld() {
         return this.jumpPressed;
+    }
+
+    getDash() {
+        if (this.isDashing) {
+            this.isDashing = false;
+            return true;
+        }
+        return false;
     }
 
     consumeJump() {
@@ -475,8 +572,82 @@ export class MobileControls {
     }
 
     openSettings() {
-        // Re-use logic or implement minimalist settings modal
-        // (Keeping it simple for now)
+        if (document.getElementById('mobileSettingsModal')) return;
+
+        const modal = document.createElement('div');
+        modal.id = 'mobileSettingsModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 400px;
+            background: rgba(32, 43, 72, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #ff6b9d;
+            border-radius: 20px;
+            padding: 30px;
+            z-index: 10000;
+            color: white;
+            pointer-events: auto;
+        `;
+
+        modal.innerHTML = `
+            <h2 style="text-align: center; color: #ff6b9d; margin-bottom: 20px;">📱 MOBILE SETTINGS</h2>
+            
+            <div class="setting-item" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px;">HUD Scale: <span id="val-hudScale">${this.settings.hudScale.toFixed(1)}</span></label>
+                <input type="range" id="set-hudScale" min="0.5" max="1.5" step="0.1" value="${this.settings.hudScale}" style="width: 100%;">
+            </div>
+
+            <div class="setting-item" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px;">Move Sensitivity: <span id="val-moveSens">${this.settings.moveSensitivity.toFixed(1)}</span></label>
+                <input type="range" id="set-moveSens" min="0.5" max="3.0" step="0.1" value="${this.settings.moveSensitivity}" style="width: 100%;">
+            </div>
+
+            <div class="setting-item" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px;">Aim Sensitivity: <span id="val-aimSens">${this.settings.aimSensitivity.toFixed(1)}</span></label>
+                <input type="range" id="set-aimSens" min="0.5" max="3.0" step="0.1" value="${this.settings.aimSensitivity}" style="width: 100%;">
+            </div>
+
+            <div class="setting-item" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <label>Lefty Mode</label>
+                <input type="checkbox" id="set-lefty" ${this.settings.leftyMode ? 'checked' : ''} style="width: 24px; height: 24px;">
+            </div>
+
+            <button id="closeMobileSettings" class="btn btn-primary" style="width: 100%; margin-top: 10px;">SAVE & CLOSE</button>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Events
+        const updateVal = (id, val) => document.getElementById(`val-${id}`).textContent = parseFloat(val).toFixed(1);
+
+        modal.querySelector('#set-hudScale').addEventListener('input', (e) => {
+            this.settings.hudScale = parseFloat(e.target.value);
+            updateVal('hudScale', e.target.value);
+        });
+
+        modal.querySelector('#set-moveSens').addEventListener('input', (e) => {
+            this.settings.moveSensitivity = parseFloat(e.target.value);
+            updateVal('moveSens', e.target.value);
+        });
+
+        modal.querySelector('#set-aimSens').addEventListener('input', (e) => {
+            this.settings.aimSensitivity = parseFloat(e.target.value);
+            updateVal('aimSens', e.target.value);
+        });
+
+        modal.querySelector('#set-lefty').addEventListener('change', (e) => {
+            this.settings.leftyMode = e.target.checked;
+        });
+
+        modal.querySelector('#closeMobileSettings').addEventListener('click', () => {
+            this.saveSettings();
+            modal.remove();
+            this.rebuildUI();
+        });
     }
 
     rebuildUI() {

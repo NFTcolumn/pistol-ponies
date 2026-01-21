@@ -48,26 +48,36 @@ export class HUD {
         const width = this.canvas.width;
         const height = this.canvas.height;
 
-        const scale = this.isMobile ? 0.75 : 1.0;
+        const mobileSettings = player.isMobile ? (window.game?.mobileControls?.settings || {}) : {};
+        const hudScale = mobileSettings.hudScale || this.isMobile ? 0.75 : 1.0;
+        const scale = hudScale;
 
         // Minimap (top left)
         if (mapData) {
-            this.drawMinimap(ctx, player, players, mapData, 20, 20, scale);
+            this.drawMinimap(ctx, player, players, mapData, 20 * scale, 20 * scale, scale);
         }
 
         // Health bar (below minimap on mobile, bottom left on desktop)
-        const healthX = 20;
-        const healthY = this.isMobile ? 20 + (180 * scale) + 15 : height - 100;
+        const isLefty = mobileSettings.leftyMode;
+
+        let healthX = 20 * scale;
+        if (this.isMobile && isLefty) {
+            healthX = width - (200 * scale) - (20 * scale);
+        }
+        const healthY = this.isMobile ? (20 * scale) + (180 * scale) + (15 * scale) : height - (100 * scale);
         this.drawHealthSection(ctx, player, healthX, healthY, scale);
 
         // Ammo counter (top right on mobile, bottom right on desktop)
-        const ammoX = this.isMobile ? width - (200 * scale) - 20 : width - 220;
-        const ammoY = this.isMobile ? 20 : height - 100;
+        let ammoX = this.isMobile ? width - (200 * scale) - (20 * scale) : width - (220 * scale);
+        if (this.isMobile && isLefty) {
+            ammoX = 20 * scale;
+        }
+        const ammoY = this.isMobile ? 20 * scale : height - (100 * scale);
         this.drawAmmoSection(ctx, player, ammoX, ammoY, scale);
 
         // Kill feed (top right below ammo on mobile, desktop stays same)
-        const killFeedX = this.isMobile ? width - (300 * scale) - 20 : width - 320;
-        const killFeedY = this.isMobile ? ammoY + (80 * scale) + 20 : 20;
+        const killFeedX = this.isMobile ? width - (300 * scale) - (20 * scale) : width - (320 * scale);
+        const killFeedY = this.isMobile ? ammoY + (80 * scale) + (20 * scale) : 20 * scale;
         this.drawKillFeed(ctx, killFeedX, killFeedY, scale);
 
         // Scoreboard hint (top center)
