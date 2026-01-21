@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Leaderboard - Pistol Ponies</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Ad Scripts -->
+    <meta name="monetag" content="aa3502d9d035d113129db6098f5c0f0d">
+    <script src="https://quge5.com/88/tag.min.js" data-zone="204086" async data-cfasync="false"></script>
+
+    <style>
+        .leaderboard-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .leaderboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .leaderboard-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: #ff6b9d;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .leaderboard-subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 10px;
+            font-size: 18px;
+        }
+
+        .leaderboard-table {
+            background: linear-gradient(145deg, rgba(42, 42, 78, 0.95), rgba(30, 30, 55, 0.95));
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(255, 107, 157, 0.2);
+        }
+
+        th {
+            padding: 20px;
+            text-align: left;
+            font-weight: 700;
+            color: #ff6b9d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 13px;
+        }
+
+        th:first-child {
+            text-align: center;
+            width: 80px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(78, 205, 196, 0.1);
+        }
+
+        td {
+            padding: 18px 20px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+        }
+
+        .rank-cell {
+            text-align: center;
+            font-weight: 700;
+            color: #4ecdc4;
+            font-size: 18px;
+        }
+
+        .rank-medal {
+            font-size: 24px;
+        }
+
+        .name-cell {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .wallet-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ecdc4;
+            margin-left: 8px;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #4ecdc4, #44a3a0);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-size: 15px;
+            margin-top: 30px;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .leaderboard-title {
+                font-size: 32px;
+            }
+
+            th,
+            td {
+                padding: 12px 10px;
+                font-size: 13px;
+            }
+
+            .leaderboard-container {
+                padding: 10px;
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Logo Header -->
+    <div style="text-align: center; padding: 20px 0;">
+        <img src="/logo.png" alt="Pistol Ponies" style="max-width: 200px; height: auto;">
+    </div>
+
+    <div class="leaderboard-container">
+        <div class="leaderboard-header">
+            <h1 class="leaderboard-title">
+                <span>🏆</span>
+                LEADERBOARD
+            </h1>
+            <p class="leaderboard-subtitle">Top players ranked by total points</p>
+        </div>
+
+        <div id="leaderboardContent" class="loading">
+            Loading leaderboard...
+        </div>
+
+        <center>
+            <a href="/" class="back-button">← Back to Home</a>
+        </center>
+    </div>
+
+    <script>
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3001'
+            : 'https://pistolponies-production.up.railway.app';
+
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch(`${API_URL}/api/leaderboard`);
+                const leaderboard = await response.json();
+                renderLeaderboard(leaderboard);
+            } catch (error) {
+                document.getElementById('leaderboardContent').innerHTML
+                    =
+                    '<div class="loading">Failed to load leaderboard. Please try again later.</div>';
+                console.error('Error loading leaderboard:', error);
+            }
+        }
+
+        function renderLeaderboard(players) {
+            if (players.length === 0) {
+                document.getElementById('leaderboardContent').innerHTML =
+                    '<div class="loading">No players yet. Be the first to play!</div>';
+                return;
+            }
+
+            const table = `
+        <div class="leaderboard-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Name</th>
+                <th>Level</th>
+                <th>Kills</th>
+                <th>Deaths</th>
+                <th>Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${players.map(player => `
+                <tr>
+                  <td class="rank-cell">
+                    ${player.rank <= 3
+                    ? `<span class="rank-medal">${['🥇', '🥈', '🥉'][player.rank - 1]}</span>`
+                    : player.rank
+                }
+                  </td>
+                  <td class="name-cell">
+                    ${player.name}
+                    ${player.hasWallet ? '<span class="wallet-indicator" title="Wallet Linked"></span>' : ''}
+                  </td>
+                  <td>${player.level}</td>
+                  <td>${player.kills}</td>
+                  <td>${player.deaths}</td>
+                  <td><strong>${player.points}</strong></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+            document.getElementById('leaderboardContent').innerHTML = table;
+        }
+
+        // Load on page load
+        loadLeaderboard();
+    </script>
+
+    <!-- Pony Labs Footer -->
+    <footer class="pony-labs-footer">
+        <a href="https://ponylabs.io" target="_blank" rel="noopener">
+            <span class="pony-icon">🐴</span>
+            Built by Pony Labs
+        </a>
+    </footer>
+</body>
+
+</html>

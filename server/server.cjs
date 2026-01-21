@@ -1,7 +1,11 @@
 const WebSocket = require('ws');
+const fs = require('fs');
+const path = require('path');
+const http = require('http');
 
 // Use environment PORT (Railway sets this) or default to 3000 for local development
 const PORT = process.env.PORT || 3000;
+const API_PORT = process.env.API_PORT || 3001;
 const TICK_RATE = 60;
 const TICK_INTERVAL = 1000 / TICK_RATE;
 
@@ -164,6 +168,10 @@ class GameServer {
         this.floorTiles = [];
         this.initFloorTiles();
 
+        // Leaderboard persistence
+        this.leaderboardPath = path.join(__dirname, 'data', 'leaderboard.json');
+        this.loadLeaderboard();
+
         this.setupServer();
         this.startGameLoop();
 
@@ -259,6 +267,62 @@ class GameServer {
         });
 
         console.log(`Game server running on port ${PORT}`);
+
+        // Setup HTTP API server
+        this.setupAPIServer();
+    }
+
+    setupAPIServer() {
+        const server = http.createServer((req, res) => {
+            // Enable CORS
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+            if (req.method === 'OPTIONS') {
+                res.writeHead(200);
+                res.end();
+                return;
+            }
+
+            if (req.url === '/api/leaderboard' && req.method === 'GET') {
+                const leaderboard = this.getLeaderboard(100);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(leaderboard));
+            } else if (req.url === '/api/link-wallet' && req.method === 'POST') {
+                let body = '';
+                req.on('data', chunk => body += chunk);
+                req.on('end', () => {
+                    try {
+                        const { playerName, walletAddress } = JSON.parse(body);
+                        if (!playerName || !walletAddress) {
+                            res.writeHead(400, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'Missing playerName or walletAddress' }));
+                            return;
+                        }
+
+                        const success = this.linkWallet(playerName, walletAddress);
+                        if (success) {
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ success: true }));
+                        } else {
+                            res.writeHead(404, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'Player not found' }));
+                        }
+                    } catch (error) {
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+                    }
+                });
+            } else {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Not found' }));
+            }
+        });
+
+        server.listen(API_PORT, () => {
+            console.log(`API server running on port ${API_PORT}`);
+        });
     }
 
     handleMessage(ws, data) {
@@ -812,6 +876,9 @@ class GameServer {
                                 }
                             }
 
+                            // Update leaderboard
+                            this.updateLeaderboard(killer);
+
                             // Broadcast kill event with XP info
                             this.broadcast({
                                 type: 'playerKilled',
@@ -823,6 +890,9 @@ class GameServer {
                                 killStreak: killer.killStreak
                             });
                         }
+
+                        // Update leaderboard for victim (deaths count)
+                        this.updateLeaderboard(player);
 
                         // Respawn after delay
                         setTimeout(() => {
@@ -1283,6 +1353,92 @@ class GameServer {
             type: 'gameState',
             players: { [player.id]: this.getPlayerData(player) }
         });
+    }
+
+    // Leaderboard persistence methods
+    loadLeaderboard() {
+        try {
+            if (fs.existsSync(this.leaderboardPath)) {
+                const data = fs.readFileSync(this.leaderboardPath, 'utf8');
+                this.leaderboardData = JSON.parse(data);
+            } else {
+                this.leaderboardData = { players: [], lastUpdate: null };
+            }
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+            this.leaderboardData = { players: [], lastUpdate: null };
+        }
+    }
+
+    saveLeaderboard() {
+        try {
+            this.leaderboardData.lastUpdate = new Date().toISOString();
+            fs.writeFileSync(this.leaderboardPath, JSON.stringify(this.leaderboardData, null, 2));
+        } catch (error) {
+            console.error('Error saving leaderboard:', error);
+        }
+    }
+
+    updateLeaderboard(player) {
+        if (!player || player.isBot) return; // Don't track bots
+
+        const existingIdx = this.leaderboardData.players.findIndex(p => p.name === player.name);
+
+        const playerData = {
+            name: player.name,
+            level: player.level || 1,
+            kills: player.kills || 0,
+            deaths: player.deaths || 0,
+            xp: (player.kills || 0) * 100, // 100 XP per kill
+            wallet: existingIdx >= 0 ? this.leaderboardData.players[existingIdx].wallet : null,
+            lastPlayed: new Date().toISOString()
+        };
+
+        if (existingIdx >= 0) {
+            // Update existing player (keep best stats)
+            const existing = this.leaderboardData.players[existingIdx];
+            this.leaderboardData.players[existingIdx] = {
+                ...playerData,
+                kills: Math.max(existing.kills, playerData.kills),
+                deaths: Math.max(existing.deaths, playerData.deaths),
+                level: Math.max(existing.level, playerData.level),
+                xp: Math.max(existing.xp, playerData.xp)
+            };
+        } else {
+            this.leaderboardData.players.push(playerData);
+        }
+
+        // Sort by XP descending
+        this.leaderboardData.players.sort((a, b) => b.xp - a.xp);
+
+        // Keep top 1000 players
+        if (this.leaderboardData.players.length > 1000) {
+            this.leaderboardData.players = this.leaderboardData.players.slice(0, 1000);
+        }
+
+        this.saveLeaderboard();
+    }
+
+    getLeaderboard(limit = 100) {
+        return this.leaderboardData.players.slice(0, limit).map((player, idx) => ({
+            rank: idx + 1,
+            name: player.name,
+            level: player.level,
+            kills: player.kills,
+            deaths: player.deaths,
+            points: player.xp,
+            hasWallet: !!player.wallet
+        }));
+    }
+
+    linkWallet(playerName, walletAddress) {
+        const player = this.leaderboardData.players.find(p => p.name === playerName);
+        if (player) {
+            player.wallet = walletAddress;
+            this.saveLeaderboard();
+            return true;
+        }
+        return false;
     }
 }
 
