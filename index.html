@@ -37,7 +37,8 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700;800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <meta name="monetag" content="aa3502d9d035d113129db6098f5c0f0d">
   <script src="https://quge5.com/88/tag.min.js" data-zone="204086" async data-cfasync="false"></script>
@@ -45,12 +46,20 @@
   <style>
     body {
       background: #bdc3ff;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .page-wrapper {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      overflow: hidden;
+      width: 100%;
+      padding: 40px 0;
     }
 
     .landing-card {
@@ -130,17 +139,20 @@
 </head>
 
 <body>
-  <div class="landing-card">
-    <img src="/logo.png" alt="Pistol Ponies" class="landing-logo">
-    <h1 class="landing-title">Pistol Ponies</h1>
-    <p class="landing-subtitle">The ultimate 3D online multiplayer pony shooter. Battle friends, level up your pony, and
-      dominate the pixel arena!</p>
-    <a href="/game" class="play-btn">🎮 PLAY NOW</a>
+  <div class="page-wrapper">
+    <div class="landing-card">
+      <img src="/logo.png" alt="Pistol Ponies" class="landing-logo">
+      <h1 class="landing-title">Pistol Ponies</h1>
+      <p class="landing-subtitle">The ultimate 3D online multiplayer pony shooter. Battle friends, level up your pony,
+        and
+        dominate the pixel arena!</p>
+      <a href="/game" class="play-btn">🎮 PLAY NOW</a>
 
-    <div class="footer-links">
-      <a href="/ads">Advertise</a>
-      <span>•</span>
-      <a href="https://t.me/pixelponies" target="_blank">Telegram</a>
+      <div class="footer-links">
+        <a href="/ads">Advertise</a>
+        <span>•</span>
+        <a href="https://t.me/pixelponies" target="_blank">Telegram</a>
+      </div>
     </div>
   </div>
 
