@@ -336,6 +336,13 @@ class GameServer {
 
     handleMessage(ws, data) {
         switch (data.type) {
+            case 'getLeaderboard':
+                const leaderboard = this.getLeaderboard(100);
+                ws.send(JSON.stringify({
+                    type: 'leaderboardData',
+                    data: leaderboard
+                }));
+                break;
             case 'join':
                 this.handleJoin(ws, data);
                 break;

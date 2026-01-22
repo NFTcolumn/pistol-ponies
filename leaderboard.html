@@ -247,18 +247,38 @@
     </div>
 
     <script>
-        const API_URL = window.location.hostname === 'localhost'
-            ? 'http://localhost:3000'
-            : 'https://pistol-ponies-production.up.railway.app';
+        const WS_URL = window.location.hostname === 'localhost'
+            ? 'ws://localhost:3000'
+            : 'wss://pistol-ponies-production.up.railway.app';
 
         async function loadLeaderboard() {
             try {
-                const response = await fetch(`${API_URL}/api/leaderboard`);
-                const leaderboard = await response.json();
-                renderLeaderboard(leaderboard);
+                const ws = new WebSocket(WS_URL);
+
+                ws.onopen = () => {
+                    ws.send(JSON.stringify({ type: 'getLeaderboard' }));
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'leaderboardData') {
+                        renderLeaderboard(data.data);
+                        ws.close();
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket Error:', error);
+                    document.getElementById('leaderboardContent').innerHTML =
+                        '<div class="loading">Failed to connect to server. Please try again later.</div>';
+                };
+
+                ws.onclose = () => {
+                    // Handled if we didn't get data
+                };
+
             } catch (error) {
-                document.getElementById('leaderboardContent').innerHTML
-                    =
+                document.getElementById('leaderboardContent').innerHTML =
                     '<div class="loading">Failed to load leaderboard. Please try again later.</div>';
                 console.error('Error loading leaderboard:', error);
             }
