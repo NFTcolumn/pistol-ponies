@@ -70,6 +70,7 @@ export class Game {
             if (nameInput.value.trim()) {
                 this.menu.setPlayerName(nameInput.value.trim());
             }
+            this.sounds.playTheme();
             this.startMultiplayer();
         });
 
@@ -289,6 +290,14 @@ export class Game {
             onQuitGame: () => {
                 this.ingameMenu.hide();
                 this.network.disconnect();
+                if (this.sounds.backgroundSource) {
+                    try { this.sounds.backgroundSource.stop(); } catch (e) { }
+                    this.sounds.backgroundSource = null;
+                }
+                if (this.sounds.themeSource) {
+                    try { this.sounds.themeSource.stop(); } catch (e) { }
+                    this.sounds.themeSource = null;
+                }
                 this.gameState = 'menu';
                 this.mobileControls.hide();
                 this.menu.show();
@@ -365,17 +374,17 @@ export class Game {
                 player.level = data.level || 1;
                 player.killStreak = data.killStreak || 0;
                 player.skillPoints = data.skillPoints || 0;
-                player.stats = data.stats || { speed: 0, health: 0, ammo: 0, jump: 0, dash: 0, aim: 0 };
-                player.maxHealth = data.maxHealth || 100;
-                player.maxAmmo = data.maxAmmo || 12;
+
+                // Sync weapon state
+                if (player.weapon) {
+                    player.weapon.ammo = data.ammo;
+                    player.weapon.reloading = data.reloading;
+                    player.weapon.maxAmmo = data.maxAmmo || 12;
+                }
             }
 
-            // Sync weapon state
-            if (player.weapon) {
-                player.weapon.ammo = data.ammo;
-                player.weapon.reloading = data.reloading;
-                player.weapon.maxAmmo = data.maxAmmo || 12;
-            }
+            // Physics state should always sync regardless of stat syncing
+            player.grounded = data.grounded;
         }
 
         // Cleanup disconnected players
@@ -480,15 +489,25 @@ export class Game {
         // --- Sound Triggers ---
         const isMoving = movement.x !== 0 || movement.z !== 0;
         const wasAirborne = this.localPlayer._wasAirborne || false;
-        const isAirborne = this.localPlayer.height > 0.1;
+        // Simplify airborne check: grounded is the primary source of truth
+        const isAirborne = this.localPlayer.grounded === false;
         this.localPlayer._wasAirborne = isAirborne;
 
         this.sounds.playSteps(isMoving && !isAirborne);
-        this.sounds.playAirborne(isAirborne);
 
-        if (wasAirborne && !isAirborne) {
+        // Trigger one-shot sounds for jump/land
+        if (!wasAirborne && isAirborne) {
+            console.log('[Game] State: Transition to AIRBORNE (Height: ' + Math.round(this.localPlayer.height) + ')');
+            this.sounds.playJump();
+        } else if (wasAirborne && !isAirborne) {
+            console.log('[Game] State: Transition to GROUNDED');
             this.sounds.playLand();
+            // Force stop airborne loop on landing just in case
+            this.sounds.playAirborne(false);
         }
+
+        // Loop management
+        this.sounds.playAirborne(isAirborne);
 
         // Get dash from keyboard or gamepad
         const desktopDash = this.input.getAndResetDash();

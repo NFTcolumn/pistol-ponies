@@ -472,7 +472,7 @@ class GameServer {
 
         // Apply jump with stat: +10% jump height per point
         if (data.input.jump && player.grounded) {
-            const baseJump = 400;
+            const baseJump = 500;
             const jumpMultiplier = 1 + (player.stats?.jump || 0) * 0.10;
             player.vHeight = baseJump * jumpMultiplier;
             player.grounded = false;
@@ -753,8 +753,8 @@ class GameServer {
             // Check for loot box pickup
             this.checkLootBoxPickup(player);
 
-            // Check if player is over a destroyed floor tile
-            this.checkPlayerFalling(player);
+            // Check if player is over a destroyed floor tile (DISABLED)
+            // this.checkPlayerFalling(player);
         }
 
         // Update loot box respawns
@@ -811,7 +811,7 @@ class GameServer {
 
             // 3. Check floor collision
             if (bullet.z <= 0) {
-                this.damageFloorTile(bullet.x, bullet.y, 1);
+                // this.damageFloorTile(bullet.x, bullet.y, 1); // DISABLED
                 this.bullets.splice(i, 1);
                 continue;
             }
@@ -1035,6 +1035,7 @@ class GameServer {
             pitch: player.pitch || 0,
             health: player.health,
             alive: player.alive,
+            grounded: !!player.grounded,
             kills: player.kills,
             deaths: player.deaths,
             color: player.color,

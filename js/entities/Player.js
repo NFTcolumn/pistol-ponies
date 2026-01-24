@@ -29,6 +29,11 @@ export class Player {
         this.spawnProtectionUntil = Date.now() + GameConfig.SPAWN_PROTECTION_TIME;
         this.lastDamageTime = 0;
 
+        // Physics state
+        this.height = 0;
+        this.vHeight = 0;
+        this.grounded = true;
+
         // 3D Specific
         this.mesh = null; // Will be assigned by Game/Renderer
     }

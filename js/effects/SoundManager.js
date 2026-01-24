@@ -17,7 +17,7 @@ export class SoundManager {
             imHit: '/sfx/imHit.wav',
             youShotMe: '/sfx/death.wav',
             steps: '/sfx/Steps.wav',
-            theme: '/sfx/theme.wav',
+            theme: '/sfx/Pistol Ponies Theme.wav',
             shoot: '/sfx/Pyoom.wav',
 
             // Random groups (handled by logic, but preloaded here)
@@ -29,7 +29,8 @@ export class SoundManager {
             reload3: '/sfx/reload3.wav',
 
             dash1: '/sfx/wooshhh1.wav',
-            dash2: '/sfx/wooshhh2.wav'
+            dash2: '/sfx/wooshhh2.wav',
+            background: '/sfx/Background_Loop.mp3'
         };
 
         // Try to initialize Web Audio API
@@ -92,17 +93,19 @@ export class SoundManager {
         }
 
         source.start(0);
+        source.gainNode = gainNode; // Expose gainNode for fade-in/out
         return source;
     }
 
     // --- Specific Triggers ---
 
     playJump() {
-        this.play('jump', { volume: 0.6 });
+        // Use dash sound for one-shot jump to distinguish from airborne loop
+        this.play('dash1', { volume: 0.8, varyPitch: true });
     }
 
     playLand() {
-        this.play('land', { volume: 0.7 });
+        this.play('land', { volume: 0.9 });
     }
 
     playHit() {
@@ -177,21 +180,39 @@ export class SoundManager {
     }
 
     playTheme() {
-        // Example: play('theme', { loop: true, volume: 0.3 });
-        // Not explicitly requested to auto-play, but ready
-        console.log('Theme music ready to play');
+        if (this.themeSource) return;
+        this.themeSource = this.play('theme', { loop: false, volume: 0.3 });
+
+        if (this.themeSource) {
+            this.themeSource.onended = () => {
+                this.themeSource = null;
+                this.playBackgroundMusic();
+            };
+        }
+    }
+
+    playBackgroundMusic() {
+        if (this.backgroundSource) return;
+
+        // Start background loop at 25% volume
+        const targetVolume = 0.25;
+        this.backgroundSource = this.play('background', { loop: true, volume: targetVolume });
     }
 
     playAirborne(isAirborne) {
         if (isAirborne) {
             if (!this.airborneLoop) {
-                this.airborneLoop = this.play('jump', { loop: true, volume: 0.5 });
+                console.log('[SoundManager] Starting airborne loop (wind)');
+                this.airborneLoop = this.play('jump', { loop: true, volume: 0.6 });
             }
         } else {
             if (this.airborneLoop) {
+                console.log('[SoundManager] Stopping airborne loop');
                 try {
                     this.airborneLoop.stop();
-                } catch (e) { /* ignore */ }
+                } catch (e) {
+                    console.warn('[SoundManager] Error stopping airborne loop:', e);
+                }
                 this.airborneLoop = null;
             }
         }
@@ -202,6 +223,10 @@ export class SoundManager {
         if (!this.enabled) {
             this.playSteps(false);
             this.playAirborne(false);
+            if (this.backgroundSource) {
+                try { this.backgroundSource.stop(); } catch (e) { }
+                this.backgroundSource = null;
+            }
         }
         return this.enabled;
     }

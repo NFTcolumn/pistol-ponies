@@ -95,8 +95,9 @@ export class Renderer {
         this.floorTileSize = mapData.floorTileSize || 40;
         this.floorGridSize = mapData.floorGridSize || 50;
 
-        // Track destroyed tiles as "holes" - only render markers for destroyed ones
+        // Track destroyed tiles as "holes" - only render markers for destroyed ones (DISABLED)
         this.destroyedTiles = new Map();
+        /*
         this.holeGeometry = new THREE.PlaneGeometry(this.floorTileSize - 2, this.floorTileSize - 2);
         this.holeMaterial = new THREE.MeshBasicMaterial({
             color: 0x000000,
@@ -110,9 +111,12 @@ export class Renderer {
                 this.removeFloorTile(tile.gx, tile.gy);
             }
         }
+        */
     }
 
     removeFloorTile(gx, gy) {
+        // Hole markers are disabled
+        /*
         const key = `${gx}_${gy}`;
         if (this.destroyedTiles.has(key)) return; // Already destroyed
 
@@ -126,6 +130,7 @@ export class Renderer {
         );
         this.scene.add(hole);
         this.destroyedTiles.set(key, hole);
+        */
     }
 
     resize() {

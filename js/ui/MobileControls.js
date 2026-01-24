@@ -126,8 +126,8 @@ export class MobileControls {
             display: flex;
             width: 90%;
             max-width: 900px;
-            height: 300px;
-            align-items: center;
+            height: 220px;
+            align-items: flex-end;
             justify-content: space-between;
             pointer-events: none;
         `;
@@ -152,7 +152,7 @@ export class MobileControls {
             flex-direction: column;
             gap: 10px;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-end;
             height: 100%;
         `;
         layout.appendChild(centerArea);
@@ -187,16 +187,17 @@ export class MobileControls {
             justify-content: center;
             color: black;
             font-family: 'Inter', sans-serif;
-            font-size: 14px;
+            font-size: 28px;
             font-weight: normal;
             pointer-events: auto;
             touch-action: none;
             user-select: none;
             cursor: pointer;
+            border-radius: 12px;
         `;
 
-        this.reloadBtn = this.createButton('reload', 'RELOAD', centerArea, btnStyle);
-        this.jumpBtn = this.createButton('jump', 'JUMP', centerArea, btnStyle);
+        this.reloadBtn = this.createButton('reload', '🔄', centerArea, btnStyle);
+        this.jumpBtn = this.createButton('jump', '⏫', centerArea, btnStyle);
 
         // Add Pause button separately at the top
         const pauseBtn = document.createElement('div');
