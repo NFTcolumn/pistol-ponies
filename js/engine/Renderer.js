@@ -138,7 +138,7 @@ export class Renderer {
         if (!player) return;
 
         // FPS camera position (at player height + head offset)
-        this.camera.position.set(player.x, 25 + (player.height || 0), player.y);
+        this.camera.position.set(player.x, 35 + (player.height || 0), player.y);
 
         // Apply rotation
         this.camera.rotation.set(player.pitch || 0, -player.angle, 0);
@@ -361,7 +361,7 @@ export class Renderer {
         const mesh = new THREE.Mesh(geo, mat);
 
         // Spawn at server position (with Y/Z swap)
-        mesh.position.set(bulletData.x, bulletData.z || 25, bulletData.y);
+        mesh.position.set(bulletData.x, bulletData.z || 35, bulletData.y);
         this.scene.add(mesh);
 
         // Speed up client bullets 2x to better match server hit detection

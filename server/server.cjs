@@ -21,7 +21,13 @@ class GameServer {
         this.bullets = [];
         this.nextPlayerId = 1;
         this.bots = new Map();
-        this.botNames = ['Applejack-Bot', 'Rainbow-Bot', 'Pinkie-Bot', 'Flutter-Bot', 'Rarity-Bot', 'Twilight-Bot'];
+        this.botNames = [
+            'Shadow-Bolt', 'Neon-Nitro', 'Crimson-Clydesdale', 'Iron-Iris', 'Quantum-Quinter',
+            'Gunslinger-Glory', 'Ghost-Gallop', 'Bullet-Blaze', 'Spectral-Spur', 'Thunder-Trots',
+            'Midnight-Mare', 'Digital-Dash', 'Rogue-Racer', 'Plasma-Pony', 'Void-Vagabond',
+            'Steel-Stallion', 'Cyber-Colt', 'Aether-Alpha', 'Rarity-Rager', 'Twilight-Tactical',
+            'Apple-Sniper', 'Pinkie-Primal', 'Flutter-Fury'
+        ];
 
         // Map configuration
         this.mapWidth = 2000;
@@ -186,8 +192,8 @@ class GameServer {
         this.setupServer();
         this.startGameLoop();
 
-        // Spawn initial bots
-        for (let i = 0; i < 4; i++) {
+        // Spawn initial bots (Increased to 12 for more action)
+        for (let i = 0; i < 12; i++) {
             this.spawnBot();
         }
     }
@@ -501,7 +507,14 @@ class GameServer {
             for (let i = 0; i < steps; i++) {
                 const nextX = player.x + stepSizeX;
                 const nextY = player.y + stepSizeY;
-                if (!this.checkWallCollision(nextX, nextY, colRadius)) {
+
+                // Keep inside arena bounds
+                const inBounds = nextX > 20 && nextX < this.mapWidth - 20 && nextY > 20 && nextY < this.mapHeight - 20;
+
+                // Allow dashing if already high enough to be on top of walls
+                const isOverWall = player.height >= 100;
+
+                if (inBounds && (isOverWall || !this.checkWallCollision(nextX, nextY, colRadius))) {
                     player.x = nextX;
                     player.y = nextY;
                 } else {
@@ -531,7 +544,7 @@ class GameServer {
         const spawnDist = 30;
         const bulletX = player.x + Math.sin(player.angle) * spawnDist;
         const bulletY = player.y - Math.cos(player.angle) * spawnDist;
-        const bulletZ = player.height + 25 + Math.sin(player.pitch) * spawnDist;
+        const bulletZ = player.height + 35 + Math.sin(player.pitch) * spawnDist;
 
         // Aim shake (spread): base spread reduced by aim stat
         const baseSpread = 0.08; // ~4.5 degrees of inaccuracy
@@ -755,7 +768,7 @@ class GameServer {
             bullet.y += bullet.vy * deltaTime;
             bullet.z += (bullet.vz || 0) * deltaTime;
 
-            // Remove if out of bounds, hitting wall, or too old
+            // 1. Out of bounds or too old
             if (bullet.x < 0 || bullet.x > this.mapWidth ||
                 bullet.y < 0 || bullet.y > this.mapHeight ||
                 Date.now() - bullet.createdTime > 2000) {
@@ -763,10 +776,11 @@ class GameServer {
                 continue;
             }
 
-            // Check wall collision and damage
+            // 2. Check wall collision
             let hitWall = false;
             for (let j = this.walls.length - 1; j >= 0; j--) {
                 const wall = this.walls[j];
+                // Check if bullet point is inside wall 3D volume
                 if (bullet.x >= wall.x && bullet.x <= wall.x + wall.width &&
                     bullet.y >= wall.y && bullet.y <= wall.y + wall.height &&
                     bullet.z >= 0 && bullet.z <= 100) {
@@ -776,23 +790,14 @@ class GameServer {
                         wall.health--;
                         if (wall.health <= 0) {
                             const wallId = wall.id;
-                            const wallData = { ...wall }; // Save wall data for regeneration
+                            const wallData = { ...wall };
                             this.walls.splice(j, 1);
-
-                            // Schedule wall regeneration after 30 seconds
                             setTimeout(() => {
-                                wallData.health = 3; // Reset health
+                                wallData.health = 3;
                                 this.walls.push(wallData);
-                                this.broadcast({
-                                    type: 'wallRegenerated',
-                                    wall: wallData
-                                });
+                                this.broadcast({ type: 'wallRegenerated', wall: wallData });
                             }, 30000);
-
-                            this.broadcast({
-                                type: 'wallDestroyed',
-                                wallId: wallId
-                            });
+                            this.broadcast({ type: 'wallDestroyed', wallId: wallId });
                         }
                     }
                     break;
@@ -804,122 +809,91 @@ class GameServer {
                 continue;
             }
 
-            // Check floor tile collision (bullet hits ground)
+            // 3. Check floor collision
             if (bullet.z <= 0) {
                 this.damageFloorTile(bullet.x, bullet.y, 1);
                 this.bullets.splice(i, 1);
                 continue;
             }
 
-            // Check collisions with players
-            let bulletHitPlayer = false;
+            // 4. Check player collisions
+            let bulletRemoved = false;
             for (const [id, player] of this.players) {
                 if (bullet.ownerId === id || !player.alive) continue;
 
                 const dx = bullet.x - player.x;
                 const dy = bullet.y - player.y;
-                const bulletHeight = bullet.z - (player.height || 0); // Height relative to player base
+                const bulletHeight = bullet.z - (player.height || 0);
                 const dist2D = Math.sqrt(dx * dx + dy * dy);
 
-                // Hit box: 25 unit radius (increased for better hit reg), 0-45 unit height range
-                // Aligned with visual pony model (scaled 0.6x, head at ~33-40 units)
-                if (dist2D < 25 && bulletHeight >= 0 && bulletHeight <= 45) {
-                    // Determine hit zone and damage multiplier
-                    let damageMultiplier = 1.0;
+                // Hit Box: 25 radius, 0-50 height
+                if (dist2D < 25 && bulletHeight >= 0 && bulletHeight <= 50) {
                     let hitZone = 'body';
+                    let damageMultiplier = 1.0;
 
+                    // HEADSHOT Check
                     if (bulletHeight >= 30) {
-                        // HEADSHOT - instant kill (head is at 30-45 range after scale)
                         hitZone = 'head';
-                        damageMultiplier = 4.0;
-                    } else if (bulletHeight < 10) {
-                        // LEG SHOT - apply slow (legs are 0-10 after scale)
+                        const attacker = this.players.get(bullet.ownerId);
+                        const isBotAttacker = attacker && attacker.isBot;
+
+                        // Headshots are Mega-Lethal for humans (40x), but balanced for bots (2x)
+                        damageMultiplier = isBotAttacker ? 2.0 : 40.0;
+                    } else if (bulletHeight < 12) {
                         hitZone = 'legs';
-                        player.slowedUntil = Date.now() + 2000; // 2 second slow
+                        player.slowedUntil = Date.now() + 2000;
                     }
 
-                    // Apply damage
                     const finalDamage = bullet.damage * damageMultiplier;
                     player.health -= finalDamage;
                     player.lastDamageTime = Date.now();
 
-                    // Notify victim they were hit
+                    // Notify victim
                     if (player.socket) {
-                        this.send(player.socket, {
-                            type: 'playerHit',
-                            damage: finalDamage,
-                            hitZone: hitZone
-                        });
+                        this.send(player.socket, { type: 'playerHit', damage: finalDamage, hitZone: hitZone });
                     }
 
+                    // Notify attacker (for SFX/Hitmarkers)
+                    const attacker = this.players.get(bullet.ownerId);
+                    if (attacker && attacker.socket) {
+                        this.send(attacker.socket, { type: 'hitConfirm', hitZone: hitZone, damage: finalDamage });
+                    }
+
+                    // Kill logic
                     if (player.health <= 0) {
                         player.health = 0;
                         player.alive = false;
                         player.deaths++;
-                        player.killStreak = 0; // Reset victim's kill streak
-
-                        // Award kill and XP
-                        const killer = this.players.get(bullet.ownerId);
-                        if (killer) {
-                            killer.kills++;
-                            killer.killStreak++;
-                            if (killer.killStreak > killer.highestKillStreak) {
-                                killer.highestKillStreak = killer.killStreak;
-                            }
-
-                            // Calculate XP: base 100 + streak bonus + headshot bonus
-                            let xpGain = 100;
-                            xpGain += (killer.killStreak - 1) * 50; // +50 per streak level
-                            if (hitZone === 'head') xpGain += 50; // Headshot bonus
-
-                            killer.xp += xpGain;
-                            const oldLevel = killer.level;
-                            killer.level = Math.floor(Math.sqrt(killer.xp / 100)) + 1;
-
-                            // Grant skill points on level up (3 per level)
-                            if (killer.level > oldLevel) {
-                                const levelsGained = killer.level - oldLevel;
-                                killer.skillPoints += levelsGained * 2;
-
-                                // Notify player of level up
-                                if (killer.socket) {
-                                    this.send(killer.socket, {
-                                        type: 'levelUp',
-                                        level: killer.level,
-                                        skillPoints: killer.skillPoints,
-                                        newPoints: levelsGained * 2
-                                    });
-                                }
-                            }
-
-                            // Update leaderboard
-                            this.updateLeaderboard(killer);
-
-                            // Broadcast kill event with XP info
-                            this.broadcast({
-                                type: 'playerKilled',
-                                killer: this.getPlayerData(killer),
-                                victim: this.getPlayerData(player),
-                                weapon: killer.weapon.type,
-                                hitZone: hitZone,
-                                xpGain: xpGain,
-                                killStreak: killer.killStreak
-                            });
-                        }
-
-                        // Update leaderboard for victim (deaths count)
+                        player.killStreak = 0;
                         this.updateLeaderboard(player);
 
-                        // Respawn after delay
+                        if (attacker) {
+                            attacker.kills++;
+                            attacker.killStreak++;
+                            if (attacker.killStreak > attacker.highestKillStreak) attacker.highestKillStreak = attacker.killStreak;
+
+                            let xpGain = 100 + (attacker.killStreak - 1) * 50;
+                            if (hitZone === 'head') xpGain += 50;
+                            attacker.xp += xpGain;
+
+                            const oldLevel = attacker.level;
+                            attacker.level = Math.floor(Math.sqrt(attacker.xp / 100)) + 1;
+                            if (attacker.level > oldLevel) {
+                                const lvls = attacker.level - oldLevel;
+                                attacker.skillPoints += lvls * 2;
+                                if (attacker.socket) this.send(attacker.socket, { type: 'levelUp', level: attacker.level, skillPoints: attacker.skillPoints, newPoints: lvls * 2 });
+                            }
+                            this.updateLeaderboard(attacker);
+                            this.broadcast({ type: 'playerKilled', killer: this.getPlayerData(attacker), victim: this.getPlayerData(player), weapon: 'PISTOL', hitZone: hitZone, xpGain: xpGain, killStreak: attacker.killStreak });
+                            console.log(`[Kill] ${attacker.name} -> ${player.name} (${hitZone})`);
+                        }
+
                         setTimeout(() => {
                             if (this.players.has(id)) {
-                                const spawn = this.getRandomSpawnPoint();
-                                player.x = spawn.x;
-                                player.y = spawn.y;
-                                // Apply health stat to maxHealth
+                                const sp = this.getRandomSpawnPoint();
+                                player.x = sp.x; player.y = sp.y;
                                 player.maxHealth = 100 + (player.stats?.health || 0) * 10;
                                 player.health = player.maxHealth;
-                                // Apply ammo stat to maxAmmo
                                 player.weapon.maxAmmo = 12 + (player.stats?.ammo || 0) * 2;
                                 player.weapon.ammo = player.weapon.maxAmmo;
                                 player.alive = true;
@@ -928,14 +902,10 @@ class GameServer {
                         }, 3000);
                     }
 
-                    // Bullet hit - remove it (don't pass through)
-                    bulletHitPlayer = true;
+                    this.bullets.splice(i, 1);
+                    bulletRemoved = true;
                     break;
                 }
-            }
-
-            if (bulletHitPlayer) {
-                this.bullets.splice(i, 1);
             }
         }
     }
@@ -952,22 +922,56 @@ class GameServer {
             return;
         }
 
+        // Find target for pitching
+        let target = null;
+        let minDist = 1000;
+        for (const [id, p] of this.players) {
+            if (id === player.id || !p.alive) continue;
+            const dist = Math.sqrt((p.x - player.x) ** 2 + (p.y - player.y) ** 2);
+            if (dist < minDist) {
+                minDist = dist;
+                target = p;
+            }
+        }
+
+        if (!target) return;
+
         weapon.ammo--;
         weapon.lastShootTime = now;
 
-        const spawnDist = 30;
-        const bulletX = player.x + Math.sin(player.angle) * spawnDist;
-        const bulletY = player.y - Math.cos(player.angle) * spawnDist;
-        const bulletZ = player.height + 25;
+        // Human-like aiming:
+        const dx = target.x - player.x;
+        const dy = target.y - player.y;
+        const dist = Math.max(10, Math.sqrt(dx * dx + dy * dy));
+
+        // Random headshot chance: 5-25%
+        const headshotChance = 0.05 + Math.random() * 0.20;
+        const aimHeight = (Math.random() < headshotChance) ? 40 : 15; // Aim head (40) or body (15)
+
+        const bulletX = player.x + Math.sin(player.angle) * 30;
+        const bulletY = player.y - Math.cos(player.angle) * 30;
+        const bulletZ = player.height + 25; // Bot muzzle height
+
+        // Calculate pitch to hit target height
+        const dz = ((target.height || 0) + aimHeight) - bulletZ;
+        const targetPitch = Math.atan2(dz, dist);
+
+        // Natural aiming errors (Human-like)
+        const yawError = (Math.random() - 0.5) * 0.15; // Yaw wobble
+        const pitchError = (Math.random() - 0.5) * 0.1;  // Pitch wobble
+
+        const muzzleAngle = player.angle + yawError;
+        const muzzlePitch = targetPitch + pitchError;
 
         const bullet = {
+            id: Date.now() + '_' + Math.random(),
             x: bulletX,
             y: bulletY,
             z: bulletZ,
-            vx: Math.sin(player.angle) * 700,
-            vy: -Math.cos(player.angle) * 700,
-            vz: 0,
-            damage: 15, // Bots do less damage
+            vx: Math.sin(muzzleAngle) * Math.cos(muzzlePitch) * 700,
+            vy: -Math.cos(muzzleAngle) * Math.cos(muzzlePitch) * 700,
+            vz: Math.sin(muzzlePitch) * 700,
+            damage: 10,
             ownerId: player.id,
             createdTime: now
         };
@@ -977,15 +981,10 @@ class GameServer {
         this.broadcast({
             type: 'bulletFired',
             bullet: {
-                id: Date.now() + Math.random(),
-                x: bullet.x,
-                y: bullet.y,
-                z: bullet.z,
-                vx: bullet.vx,
-                vy: bullet.vy,
-                vz: bullet.vz,
-                angle: player.angle,
-                ownerId: player.id
+                id: bullet.id,
+                x: bullet.x, y: bullet.y, z: bullet.z,
+                vx: bullet.vx, vy: bullet.vy, vz: bullet.vz,
+                angle: muzzleAngle, ownerId: player.id
             }
         });
     }
@@ -1297,28 +1296,32 @@ class GameServer {
     }
 
     // Override spawn point check to ensure solid ground
+    // Safe and fully random spawn point
     getRandomSpawnPoint() {
         let attempts = 0;
 
-        while (attempts < 20) {
-            const spawn = this.spawnPoints[Math.floor(Math.random() * this.spawnPoints.length)];
-            const tile = this.getFloorTileAt(spawn.x, spawn.y);
+        while (attempts < 50) {
+            // Random point within playable area
+            const x = 100 + Math.random() * (this.mapWidth - 200);
+            const y = 100 + Math.random() * (this.mapHeight - 200);
 
-            // Only spawn if tile exists and is active
-            if (tile && tile.active && !this.checkWallCollision(spawn.x, spawn.y, 40)) {
-                return spawn;
+            // Check if floor exists (not a hole)
+            const tile = this.getFloorTileAt(x, y);
+
+            // Validate: Tile must be active AND not inside a solid wall
+            if (tile && tile.active && !this.checkWallCollision(x, y, 40)) {
+                return { x, y };
             }
             attempts++;
         }
 
-        // Fallback: find any active tile
-        for (const tile of this.floorTiles) {
-            if (tile.active) {
-                return { x: tile.x + this.FLOOR_TILE_SIZE / 2, y: tile.y + this.FLOOR_TILE_SIZE / 2 };
-            }
-        }
-
-        return this.spawnPoints[0]; // Last resort
+        // Emergency fallback to defaults if random search fails
+        const safeDefaults = [
+            { x: 1000, y: 1000 },
+            { x: 200, y: 200 },
+            { x: 1800, y: 1800 }
+        ];
+        return safeDefaults[Math.floor(Math.random() * safeDefaults.length)];
     }
 
     handleSyncStats(ws, data) {

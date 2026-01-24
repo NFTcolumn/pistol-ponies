@@ -6,7 +6,7 @@
   "main": "server/server.cjs",
   "scripts": {
     "server": "node server/server.cjs",
-    "client": "vite --host",
+    "client": "vite",
     "build": "vite build",
     "dev": "concurrently \"pnpm run server\" \"pnpm run client\""
   },

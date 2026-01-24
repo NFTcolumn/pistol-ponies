@@ -62,10 +62,10 @@ export const GameConfig = {
   // Player Hitbox Zones (heights in units, player starts at height 0)
   HITBOX: {
     LEG_MIN: 0,
-    LEG_MAX: 15,
-    BODY_MIN: 15,
-    BODY_MAX: 35,
-    HEAD_MIN: 35,
+    LEG_MAX: 12,
+    BODY_MIN: 12,
+    BODY_MAX: 30,
+    HEAD_MIN: 30,
     HEAD_MAX: 50
   },
 

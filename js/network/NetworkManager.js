@@ -100,6 +100,9 @@ export class NetworkManager {
     }
 
     handleMessage(data) {
+        if (data.type === 'hitConfirm') {
+            console.log('[NetworkManager] Received hitConfirm:', data);
+        }
         switch (data.type) {
             case 'welcome':
                 this.playerId = data.playerId;
@@ -134,6 +137,11 @@ export class NetworkManager {
                 this.game.onPlayerHit(data.damage, data.hitZone);
                 break;
 
+            case 'hitConfirm':
+                console.log('[NetworkManager] Received hitConfirm:', data);
+                this.game.onHitConfirm(data);
+                break;
+
             case 'floorTileDestroyed':
                 this.game.onFloorTileDestroyed(data.gx, data.gy);
                 break;
@@ -152,6 +160,11 @@ export class NetworkManager {
 
             case 'pong':
                 this.latency = Date.now() - data.timestamp;
+                break;
+
+            case 'lootBoxSpawn':
+            case 'lootBoxPickup':
+                // Handled in other logic or ignored for now
                 break;
 
             default:

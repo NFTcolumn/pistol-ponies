@@ -23,6 +23,7 @@ export class Input {
     setupEventListeners() {
         this.lastTapTimes = {};
         this.dashTriggered = null; // Store which key triggered the dash
+        this.consumedKeys = new Set(); // Track keys that have been "consumed" for single-trigger 
 
         // Keyboard
         window.addEventListener('keydown', (e) => {
@@ -106,6 +107,21 @@ export class Input {
 
     isKeyDown(code) {
         return !!this.keys[code];
+    }
+
+    /**
+     * Returns true if key is down, and "consumes" it so subsequent calls 
+     * return false until the key is released and pressed again.
+     */
+    consumeKey(code) {
+        if (this.keys[code] && !this.consumedKeys.has(code)) {
+            this.consumedKeys.add(code);
+            return true;
+        }
+        if (!this.keys[code]) {
+            this.consumedKeys.delete(code);
+        }
+        return false;
     }
 
     isMouseButtonDown(button = 0) {

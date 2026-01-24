@@ -1,14 +1,41 @@
 {
   "players": [
     {
+      "name": "MAN$A",
+      "level": 16,
+      "kills": 46,
+      "deaths": 14,
+      "xp": 4600,
+      "wallet": null,
+      "lastPlayed": "2026-01-23T17:33:58.383Z"
+    },
+    {
+      "name": "dkhjbaksfdasteat",
+      "level": 13,
+      "kills": 30,
+      "deaths": 28,
+      "xp": 3000,
+      "wallet": null,
+      "lastPlayed": "2026-01-24T00:08:25.138Z"
+    },
+    {
       "name": "dkhjbaksfdas",
       "level": 15,
       "kills": 27,
-      "deaths": 0,
+      "deaths": 23,
       "xp": 2700,
       "wallet": null,
-      "lastPlayed": "2026-01-21T21:04:52.360Z"
+      "lastPlayed": "2026-01-23T20:08:22.513Z"
+    },
+    {
+      "name": "TestPlayer",
+      "level": 2,
+      "kills": 1,
+      "deaths": 0,
+      "xp": 100,
+      "wallet": null,
+      "lastPlayed": "2026-01-23T20:10:06.938Z"
     }
   ],
-  "lastUpdate": "2026-01-21T21:04:52.360Z"
+  "lastUpdate": "2026-01-24T00:08:25.138Z"
 }

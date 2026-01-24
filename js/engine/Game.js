@@ -11,6 +11,7 @@ import { MobileControls } from '/js/ui/MobileControls.js';
 import { GamepadController } from '/js/engine/GamepadController.js';
 import { WalletManager } from '/js/wallet/WalletManager.js';
 import { ContractManager } from '/js/wallet/ContractManager.js';
+import { SoundManager } from '/js/effects/SoundManager.js';
 
 export class Game {
     constructor() {
@@ -28,6 +29,8 @@ export class Game {
         this.contracts = new ContractManager(this.wallet);
 
         this.network = new NetworkManager(this);
+        this.sounds = new SoundManager();
+        this.sounds.loadSounds();
 
         this.localPlayer = null;
         this.players = new Map(); // Store player objects
@@ -474,6 +477,19 @@ export class Game {
             movement.z = mobileMove.z;
         }
 
+        // --- Sound Triggers ---
+        const isMoving = movement.x !== 0 || movement.z !== 0;
+        const wasAirborne = this.localPlayer._wasAirborne || false;
+        const isAirborne = this.localPlayer.height > 0.1;
+        this.localPlayer._wasAirborne = isAirborne;
+
+        this.sounds.playSteps(isMoving && !isAirborne);
+        this.sounds.playAirborne(isAirborne);
+
+        if (wasAirborne && !isAirborne) {
+            this.sounds.playLand();
+        }
+
         // Get dash from keyboard or gamepad
         const desktopDash = this.input.getAndResetDash();
         const gamepadDash = this.gamepad.consumeDash();
@@ -510,6 +526,7 @@ export class Game {
         // Set local isDashing flag for VFX (speed lines, FOV change)
         if (dashTriggered) {
             this.localPlayer.isDashing = true;
+            this.sounds.playDash(); // Trigger dash sound
             setTimeout(() => { if (this.localPlayer) this.localPlayer.isDashing = false; }, 200);
         }
 
@@ -523,16 +540,18 @@ export class Game {
             if (now - this.lastShootTime > 300) {
                 this.network.sendShoot(this.localPlayer.angle);
                 this.renderer.addShake(5);
+                this.sounds.playShoot();
                 this.lastShootTime = now;
             }
         }
 
         // Reload (keyboard, mobile, or gamepad)
-        const shouldReload = this.input.isKeyDown('KeyR') || this.input.isKeyDown('KeyQ') ||
+        const shouldReload = this.input.consumeKey('KeyR') || this.input.consumeKey('KeyQ') ||
             (this.mobileControls.enabled && this.mobileControls.consumeReload()) ||
             this.gamepad.isReloadPressed();
         if (shouldReload) {
             this.network.sendReload();
+            this.sounds.playReload();
         }
 
         this.renderer.updateCamera(this.localPlayer);
@@ -599,6 +618,11 @@ export class Game {
     onPlayerLeft(id) { }
     onPlayerKilled(killer, victim, weapon) {
         this.hud.addKill(killer.name, victim.name, weapon);
+
+        // If local player died, play the death sound
+        if (victim.id === this.network.playerId) {
+            this.sounds.playDeathSound();
+        }
     }
     onBulletFired(bullet) {
         const color = bullet.ownerId === this.network.playerId ? 0xffea00 : 0xff3333;
@@ -615,6 +639,20 @@ export class Game {
         // Trigger red vignette effect when hit
         this.hud.triggerHitVignette();
         this.renderer.addShake(damage / 5); // Shake based on damage
+
+        // 15% chance to play "Im Hit" sound when taking damage
+        if (Math.random() < 0.15) {
+            this.sounds.play('imHit', { volume: 1.0 });
+        }
+    }
+    onHitConfirm(data) {
+        // When we hit someone else
+        console.log(`[HitConfirm] Zone: ${data.hitZone}, Damage: ${data.damage}`);
+        if (data.hitZone === 'head') {
+            this.sounds.playHeadshot();
+        } else {
+            this.sounds.playHit();
+        }
     }
     onFloorTileDestroyed(gx, gy) {
         this.renderer.removeFloorTile(gx, gy);

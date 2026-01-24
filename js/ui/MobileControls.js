@@ -113,144 +113,158 @@ export class MobileControls {
             pointer-events: none;
             z-index: 1000;
             display: none;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 20px;
         `;
         document.body.appendChild(this.container);
 
-        // Create Move Joystick (Left unless lefty)
-        const movePos = this.settings.leftyMode ? this.settings.aimPosition : this.settings.joystickPosition;
-        this.moveJoystickBase = this.createJoystickUI('move', movePos);
+        // Layout Container based on wireframe (3 columns)
+        const layout = document.createElement('div');
+        layout.style.cssText = `
+            display: flex;
+            width: 90%;
+            max-width: 900px;
+            height: 300px;
+            align-items: center;
+            justify-content: space-between;
+            pointer-events: none;
+        `;
+        this.container.appendChild(layout);
+
+        // Left Area (Move Joystick)
+        const leftArea = document.createElement('div');
+        leftArea.style.cssText = `
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        `;
+        layout.appendChild(leftArea);
+
+        // Center Area (Buttons Stack)
+        const centerArea = document.createElement('div');
+        centerArea.style.cssText = `
+            width: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        `;
+        layout.appendChild(centerArea);
+
+        // Right Area (Aim Joystick)
+        const rightArea = document.createElement('div');
+        rightArea.style.cssText = `
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        `;
+        layout.appendChild(rightArea);
+
+        // Initialize Joysticks
+        this.moveJoystickBase = this.createJoystickUI('move', leftArea);
         this.moveJoystickKnob = this.moveJoystickBase.querySelector('.mobile-joystick-knob');
 
-        // Create Aim Joystick (Right unless lefty)
-        const aimPos = this.settings.leftyMode ? this.settings.joystickPosition : this.settings.aimPosition;
-        this.aimJoystickBase = this.createJoystickUI('aim', aimPos);
+        this.aimJoystickBase = this.createJoystickUI('aim', rightArea);
         this.aimJoystickKnob = this.aimJoystickBase.querySelector('.mobile-joystick-knob');
         this.aimJoystickKnob.classList.add('aim-knob');
 
-        // Apply static visibility if needed
-        if (!this.settings.dynamicJoysticks) {
-            this.moveJoystickBase.style.display = 'block';
-            this.aimJoystickBase.style.display = 'block';
-        }
+        // Center Buttons logic
+        const btnStyle = `
+            width: 160px;
+            height: 80px;
+            background: white;
+            border: 2px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: normal;
+            pointer-events: auto;
+            touch-action: none;
+            user-select: none;
+            cursor: pointer;
+        `;
 
-        // Scaling factor for buttons based on HUD scale
-        const s = this.settings.hudScale;
+        this.reloadBtn = this.createButton('reload', 'RELOAD', centerArea, btnStyle);
+        this.jumpBtn = this.createButton('jump', 'JUMP', centerArea, btnStyle);
 
-        // Create functional buttons
-        // If lefty, swap button horizontal sides
-        const hFlip = (pos) => {
-            if (!this.settings.leftyMode) return pos;
-            const newPos = { ...pos };
-            if (pos.right !== undefined) {
-                newPos.left = pos.right;
-                delete newPos.right;
-            } else if (pos.left !== undefined) {
-                newPos.right = pos.left;
-                delete newPos.left;
-            }
-            return newPos;
-        };
-
-        this.createButton('jump', '⬆️', hFlip(this.settings.jumpPosition));
-        this.createButton('reload', '🔄', hFlip(this.settings.reloadPosition));
-        this.createButton('shoot', '🔥', hFlip(this.settings.shootPosition), 90); // 90px fire button
-
-        // Add Menu button centered at top
-        const menuBtn = this.createButton('menu', '⏸️', { left: '50%', top: 20 });
-        menuBtn.style.background = 'rgba(255, 107, 157, 0.7)';
-        menuBtn.style.border = '3px solid rgba(255, 107, 157, 0.9)';
+        // Add Pause button separately at the top
+        const pauseBtn = document.createElement('div');
+        pauseBtn.dataset.action = 'menu';
+        pauseBtn.style.cssText = `
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 107, 157, 0.7);
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            touch-action: none;
+            font-size: 20px;
+        `;
+        pauseBtn.textContent = '⏸️';
+        this.container.appendChild(pauseBtn);
 
         this.createStatButtons();
     }
 
-    createJoystickUI(name, position) {
-        const size = this.settings.joystickSize * this.settings.hudScale;
+    createJoystickUI(name, parent) {
+        const size = this.settings.joystickSize;
         const base = document.createElement('div');
         base.className = `mobile-joystick-base mobile-joystick-${name}`;
 
-        let posStyle = '';
-        if (position.left !== undefined) posStyle += `left: ${position.left}px;`;
-        if (position.right !== undefined) posStyle += `right: ${position.right}px;`;
-        if (position.bottom !== undefined) posStyle += `bottom: ${position.bottom}px;`;
-        if (position.top !== undefined) posStyle += `top: ${position.top}px;`;
-
-        const opacity = this.settings.opacity;
-
         base.style.cssText = `
-            position: fixed;
-            ${posStyle}
             width: ${size}px;
             height: ${size}px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, ${opacity * 0.3});
-            border: 3px solid rgba(255, 255, 255, ${opacity});
-            pointer-events: none;
-            display: none;
-            touch-action: none;
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.2);
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         `;
 
         const knob = document.createElement('div');
         knob.className = 'mobile-joystick-knob';
         knob.style.cssText = `
-            position: absolute;
-            left: 50%;
-            top: 50%;
             width: ${size * 0.4}px;
             height: ${size * 0.4}px;
-            margin-left: -${size * 0.2}px;
-            margin-top: -${size * 0.2}px;
             border-radius: 50%;
-            background: rgba(255, 107, 157, ${this.settings.opacity});
-            box-shadow: 0 0 10px rgba(255, 107, 157, 0.5);
-            transition: transform 0.05s ease-out;
+            border: 1px solid black;
+            background: transparent;
+            position: absolute;
+            pointer-events: none;
         `;
 
         base.appendChild(knob);
-        this.container.appendChild(base);
+        parent.appendChild(base);
         return base;
     }
 
-    createButton(name, emoji, position, customSize = null) {
-        const size = (customSize || this.settings.buttonSize) * this.settings.hudScale;
+    createButton(name, text, parent, style) {
         const btn = document.createElement('div');
         btn.className = `mobile-btn mobile-btn-${name}`;
         btn.dataset.action = name;
-
-        let posStyle = '';
-        if (position.right !== undefined) posStyle += `right: ${position.right}px;`;
-        if (position.left !== undefined) {
-            // Handle percentage for centering
-            if (typeof position.left === 'string' && position.left.includes('%')) {
-                posStyle += `left: ${position.left}; transform: translateX(-50%);`;
-            } else {
-                posStyle += `left: ${position.left}px;`;
-            }
-        }
-        if (position.bottom !== undefined) posStyle += `bottom: ${position.bottom}px;`;
-        if (position.top !== undefined) posStyle += `top: ${position.top}px;`;
-
-        const opacity = this.settings.opacity;
-
-        btn.style.cssText = `
-            position: fixed;
-            ${posStyle}
-            width: ${size}px;
-            height: ${size}px;
-            border-radius: 50%;
-            background: rgba(78, 205, 196, ${opacity * 0.5});
-            border: 3px solid rgba(78, 205, 196, ${opacity});
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: ${size * 0.5}px;
-            pointer-events: auto;
-            touch-action: none;
-            user-select: none;
-            -webkit-user-select: none;
-        `;
-        btn.textContent = emoji;
-
-        this.container.appendChild(btn);
+        btn.style.cssText = style;
+        btn.textContent = text;
+        parent.appendChild(btn);
         return btn;
     }
 
@@ -427,26 +441,17 @@ export class MobileControls {
     onJoystickStart(touch, type) {
         const state = type === 'move' ? this.moveJoystick : this.aimJoystick;
         const base = type === 'move' ? this.moveJoystickBase : this.aimJoystickBase;
-        const size = this.settings.joystickSize * this.settings.hudScale;
+        const size = this.settings.joystickSize;
 
         state.touchId = touch.identifier;
         state.active = true;
 
-        // Dynamic position (floating joystick)
-        if (this.settings.dynamicJoysticks) {
-            base.style.display = 'block';
-            base.style.left = `${touch.clientX - size / 2}px`;
-            base.style.top = `${touch.clientY - size / 2}px`;
-            base.style.right = 'auto';
-            base.style.bottom = 'auto';
-            state.center = { x: touch.clientX, y: touch.clientY };
-        } else {
-            const rect = base.getBoundingClientRect();
-            state.center = {
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2
-            };
-        }
+        // Static layout: calculate center from the base element
+        const rect = base.getBoundingClientRect();
+        state.center = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+        };
 
         state.radius = size / 2;
 
@@ -460,8 +465,6 @@ export class MobileControls {
 
         if (type === 'move') {
             if (now - this.lastTapTime < this.doubleTapThreshold) {
-                // Flick to dash: if second tap is far from previous start
-                // Or if we already have a joystick direction
                 this.isDashing = true;
                 setTimeout(() => { this.isDashing = false; }, 150);
             }
