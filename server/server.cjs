@@ -179,6 +179,11 @@ class GameServer {
         this.floorTiles = [];
         this.initFloorTiles();
 
+        // User tracking persistence
+        this.userStatsPath = path.join(__dirname, 'data', 'user_stats.json');
+        this.totalUsers = new Set();
+        this.loadUserStats();
+
         // Leaderboard persistence
         this.leaderboardPath = path.join(__dirname, 'data', 'leaderboard.json');
         this.loadLeaderboard();
@@ -305,6 +310,16 @@ class GameServer {
             return;
         }
 
+        if (req.url === '/api/admin/export-users' && req.method === 'GET') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                totalUniqueUsers: this.totalUsers.size,
+                currentActivePlayers: Array.from(this.players.values()).filter(p => !p.isBot).length,
+                timestamp: new Date().toISOString()
+            }));
+            return;
+        }
+
         // For non-API requests, return 404
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');
@@ -368,10 +383,17 @@ class GameServer {
             case 'syncStats':
                 this.handleSyncStats(ws, data);
                 break;
+            case 'trackUser':
+                this.handleTrackUser(ws, data);
+                break;
             case 'pong':
                 // Handle pong for latency measurement
                 break;
         }
+    }
+
+    handleTrackUser(ws, data) {
+        this.trackUser(data.name, data.walletAddress);
     }
 
     handleJoin(ws, data) {
@@ -454,6 +476,48 @@ class GameServer {
         }, ws);
 
         console.log(`Player ${player.name} joined (${playerId})`);
+
+        // Track user
+        this.trackUser(data.name, data.walletAddress);
+    }
+
+    trackUser(name, wallet) {
+        if (!name) return;
+        const key = wallet ? `${name}:${wallet}` : name;
+        if (!this.totalUsers.has(key)) {
+            this.totalUsers.add(key);
+            this.saveUserStats();
+            console.log(`[Tracking] New unique user: ${key}. Total: ${this.totalUsers.size}`);
+        }
+    }
+
+    loadUserStats() {
+        try {
+            if (fs.existsSync(this.userStatsPath)) {
+                const data = JSON.parse(fs.readFileSync(this.userStatsPath, 'utf8'));
+                if (Array.isArray(data.users)) {
+                    data.users.forEach(u => this.totalUsers.add(u));
+                }
+                console.log(`[Tracking] Loaded ${this.totalUsers.size} unique users`);
+            }
+        } catch (e) {
+            console.error('[Tracking] Failed to load user stats:', e);
+        }
+    }
+
+    saveUserStats() {
+        try {
+            const dir = path.dirname(this.userStatsPath);
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+            fs.writeFileSync(this.userStatsPath, JSON.stringify({
+                users: Array.from(this.totalUsers),
+                count: this.totalUsers.size,
+                lastUpdated: new Date().toISOString()
+            }, null, 2));
+        } catch (e) {
+            console.error('[Tracking] Failed to save user stats:', e);
+        }
     }
 
     handleInput(ws, data) {

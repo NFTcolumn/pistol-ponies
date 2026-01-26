@@ -108,15 +108,15 @@ export class MobileControls {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             pointer-events: none;
             z-index: 1000;
-            display: none;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 20px;
+            display: none; /* Hidden by default */
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         `;
         document.body.appendChild(this.container);
 
@@ -136,37 +136,47 @@ export class MobileControls {
         // Left Area (Move Joystick)
         const leftArea = document.createElement('div');
         leftArea.style.cssText = `
-            flex: 1;
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 180px;
+            height: 180px;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            pointer-events: none;
         `;
-        layout.appendChild(leftArea);
-
-        // Center Area (Buttons Stack)
-        const centerArea = document.createElement('div');
-        centerArea.style.cssText = `
-            width: 200px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: center;
-            justify-content: flex-end;
-            height: 100%;
-        `;
-        layout.appendChild(centerArea);
+        this.container.appendChild(leftArea);
 
         // Right Area (Aim Joystick)
         const rightArea = document.createElement('div');
         rightArea.style.cssText = `
-            flex: 1;
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            width: 180px;
+            height: 180px;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            pointer-events: none;
         `;
-        layout.appendChild(rightArea);
+        this.container.appendChild(rightArea);
+
+        // Center Area (Buttons Stack)
+        const centerArea = document.createElement('div');
+        centerArea.style.cssText = `
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            pointer-events: none;
+        `;
+        this.container.appendChild(centerArea);
 
         // Initialize Joysticks
         this.moveJoystickBase = this.createJoystickUI('move', leftArea);
@@ -348,6 +358,10 @@ export class MobileControls {
         document.addEventListener('touchmove', this.boundHandleTouchMove, { passive: false });
         document.addEventListener('touchend', this.boundHandleTouchEnd, { passive: false });
         document.addEventListener('touchcancel', this.boundHandleTouchEnd, { passive: false });
+
+        // Prevent browser zoom and scroll
+        this.container.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+        this.container.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
     }
 
     removeEventListeners() {
@@ -361,6 +375,9 @@ export class MobileControls {
 
     handleTouchStart(e) {
         if (this.game.gameState !== 'playing' || this.game.ingameMenu.isVisible()) return;
+
+        // Prevent default to disable double-tap-to-zoom and scrolling
+        if (e.cancelable) e.preventDefault();
 
         for (let i = 0; i < e.changedTouches.length; i++) {
             const touch = e.changedTouches[i];

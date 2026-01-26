@@ -187,7 +187,9 @@ export class Game {
         this.uiCanvas.style.display = 'block';
         this.gameState = 'playing'; // Skip lobby for now to get into the action
         this.input.setGameActive(true); // Enable game input handling
-        this.mobileControls.show(); // Show mobile controls if on mobile
+        if (this.mobileControls.isMobile()) {
+            this.mobileControls.show(); // Only show if isMobile
+        }
         this.network.connect();
         this.setupIngameMenu(); // Setup in-game menu callbacks
     }
