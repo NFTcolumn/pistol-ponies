@@ -47,9 +47,9 @@ export class Player {
         const mouseSensitivity = 0.002;
 
         if (mobileOverrides && mobileOverrides.aimDelta) {
-            // Mobile stick aim
-            this.angle += mobileOverrides.aimDelta.x * deltaTime;
-            this.pitch -= mobileOverrides.aimDelta.y * deltaTime;
+            // Mobile swipe aim (delta-based)
+            this.angle += mobileOverrides.aimDelta.x;
+            this.pitch -= mobileOverrides.aimDelta.y;
         } else {
             // Desktop mouse aim
             this.angle += input.mouse.movementX * mouseSensitivity;

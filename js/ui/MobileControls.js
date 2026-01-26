@@ -7,7 +7,15 @@ export class MobileControls {
 
         // Control states
         this.moveJoystick = { x: 0, z: 0, active: false, touchId: null, center: { x: 0, y: 0 } };
-        this.aimJoystick = { x: 0, y: 0, active: false, touchId: null, center: { x: 0, y: 0 } };
+        this.aimJoystick = {
+            x: 0, y: 0,
+            active: false,
+            touchId: null,
+            center: { x: 0, y: 0 },
+            lastX: 0, lastY: 0, // For swipe delta
+            deltaX: 0, deltaY: 0
+        };
+        this.touchActions = new Map(); // Map touchId -> actionName ('move', 'aim', 'btn_reload', etc)
         this.shootHeld = false;
         this.jumpPressed = false;
         this.reloadPressed = false;
@@ -47,8 +55,8 @@ export class MobileControls {
         }
         return {
             joystickSize: 120,
-            buttonSize: 60,
-            opacity: 0.6,
+            buttonSize: 80,
+            opacity: 0.1, // 10% Opacity as requested
             hudScale: 1.0,
             moveSensitivity: 1.0,
             aimSensitivity: 1.0,
@@ -186,24 +194,25 @@ export class MobileControls {
         this.aimJoystickKnob = this.aimJoystickBase.querySelector('.mobile-joystick-knob');
         this.aimJoystickKnob.classList.add('aim-knob');
 
-        // Center Buttons logic
+        // Buttons Stack (Circular)
         const btnStyle = `
-            width: 160px;
-            height: 80px;
-            background: white;
-            border: 2px solid black;
+            width: ${this.settings.buttonSize}px;
+            height: ${this.settings.buttonSize}px;
+            background: rgba(255, 255, 255, ${this.settings.opacity});
+            border: 2px solid rgba(255, 255, 255, ${this.settings.opacity * 2});
             display: flex;
             align-items: center;
             justify-content: center;
-            color: black;
+            color: rgba(255, 255, 255, 0.8);
             font-family: 'Inter', sans-serif;
-            font-size: 28px;
-            font-weight: normal;
+            font-size: 32px;
             pointer-events: auto;
             touch-action: none;
             user-select: none;
             cursor: pointer;
-            border-radius: 12px;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            backdrop-filter: blur(2px);
         `;
 
         this.reloadBtn = this.createButton('reload', '🔄', centerArea, btnStyle);
@@ -219,8 +228,8 @@ export class MobileControls {
             transform: translateX(-50%);
             width: 50px;
             height: 50px;
-            background: rgba(255, 107, 157, 0.7);
-            border: 2px solid white;
+            background: rgba(255, 255, 255, ${this.settings.opacity});
+            border: 2px solid rgba(255, 255, 255, ${this.settings.opacity * 2});
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -228,6 +237,8 @@ export class MobileControls {
             pointer-events: auto;
             touch-action: none;
             font-size: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
         `;
         pauseBtn.textContent = '⏸️';
         this.container.appendChild(pauseBtn);
@@ -244,9 +255,9 @@ export class MobileControls {
             width: ${size}px;
             height: ${size}px;
             border-radius: 4px;
-            border: 1px solid rgba(0,0,0,0.2);
+            border: 1px solid rgba(255, 255, 255, ${this.settings.opacity});
             position: relative;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, ${this.settings.opacity / 2});
             display: flex;
             align-items: center;
             justify-content: center;
@@ -258,8 +269,8 @@ export class MobileControls {
             width: ${size * 0.4}px;
             height: ${size * 0.4}px;
             border-radius: 50%;
-            border: 1px solid black;
-            background: transparent;
+            border: 1px solid rgba(255,255,255, 0.5);
+            background: rgba(255, 255, 255, 0.2);
             position: absolute;
             pointer-events: none;
         `;
@@ -310,9 +321,9 @@ export class MobileControls {
             btn.style.cssText = `
                 width: 50px;
                 height: 50px;
-                border-radius: 8px;
-                background: rgba(255, 230, 109, 0.7);
-                border: 2px solid rgba(255, 230, 109, 1);
+                border-radius: 50%;
+                background: rgba(255, 230, 109, ${this.settings.opacity});
+                border: 2px solid rgba(255, 230, 109, ${this.settings.opacity * 2});
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -320,18 +331,21 @@ export class MobileControls {
                 font-size: 18px;
                 touch-action: none;
                 user-select: none;
+                color: rgba(255, 255, 255, 0.8);
             `;
-            btn.innerHTML = `<span style="font-size: 16px;">${stat.emoji}</span><span style="font-size: 10px; color: #333;">${stat.label}</span>`;
+            btn.innerHTML = `<span style="font-size: 16px; opacity: 0.8;">${stat.emoji}</span><span style="font-size: 8px; color: #fff; opacity: 0.6;">${stat.label}</span>`;
 
             btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
+                if (e.cancelable) e.preventDefault();
+                this.touchActions.set(e.changedTouches[0].identifier, `stat_${stat.key}`);
                 this.statPressed = stat.key;
-                btn.style.transform = 'scale(0.9)';
+                btn.style.opacity = '0.4';
             }, { passive: false });
 
             btn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                btn.style.transform = 'scale(1)';
+                if (e.cancelable) e.preventDefault();
+                this.touchActions.delete(e.changedTouches[0].identifier);
+                btn.style.opacity = '1.0';
             }, { passive: false });
 
             this.statContainer.appendChild(btn);
@@ -385,53 +399,45 @@ export class MobileControls {
             const y = touch.clientY;
             const width = window.innerWidth;
 
-            // Determine which side of screen was touched
-            const isLeftHalf = x < width / 2;
-            const isMoveSide = this.settings.leftyMode ? !isLeftHalf : isLeftHalf;
-
-            // Check if touch is on a button
+            // 1. Check if touch is on a circular button first
             const target = document.elementFromPoint(x, y);
-            const btn = target?.closest('.mobile-btn') || target?.closest('.mobile-stat-btn');
+            const btn = target?.closest('.mobile-btn');
 
             if (btn) {
-                if (btn.classList.contains('mobile-btn')) {
-                    this.onButtonStart({ target: btn, preventDefault: () => { } });
-                }
-                // Stat buttons have their own listeners added in createStatButtons
+                const action = btn.dataset.action;
+                this.touchActions.set(touch.identifier, `btn_${action}`);
+                this.onButtonStart({ target: btn, preventDefault: () => { } });
                 continue;
             }
 
-            if (isMoveSide && !this.moveJoystick.active) {
-                if (this.settings.dynamicJoysticks) {
+            // 2. Partition screen for Joysticks
+            const isLeftHalf = x < width / 2;
+            const isMoveSide = this.settings.leftyMode ? !isLeftHalf : isLeftHalf;
+
+            if (isMoveSide) {
+                if (!this.moveJoystick.active) {
+                    this.touchActions.set(touch.identifier, 'move');
                     this.onJoystickStart(touch, 'move');
-                } else {
-                    // Static mode: check if touch is inside the existing base
-                    const rect = this.moveJoystickBase.getBoundingClientRect();
-                    const dist = Math.sqrt(Math.pow(x - (rect.left + rect.width / 2), 2) + Math.pow(y - (rect.top + rect.height / 2), 2));
-                    if (dist < rect.width / 2 * 1.5) { // 1.5x buffer for easier pickup
-                        this.onJoystickStart(touch, 'move');
-                    }
                 }
-            } else if (!isMoveSide && !this.aimJoystick.active) {
-                if (this.settings.dynamicJoysticks) {
+            } else {
+                if (!this.aimJoystick.active) {
+                    this.touchActions.set(touch.identifier, 'aim');
                     this.onJoystickStart(touch, 'aim');
-                } else {
-                    const rect = this.aimJoystickBase.getBoundingClientRect();
-                    const dist = Math.sqrt(Math.pow(x - (rect.left + rect.width / 2), 2) + Math.pow(y - (rect.top + rect.height / 2), 2));
-                    if (dist < rect.width / 2 * 1.5) {
-                        this.onJoystickStart(touch, 'aim');
-                    }
                 }
             }
         }
     }
 
     handleTouchMove(e) {
+        if (e.cancelable) e.preventDefault();
+
         for (let i = 0; i < e.changedTouches.length; i++) {
             const touch = e.changedTouches[i];
-            if (touch.identifier === this.moveJoystick.touchId) {
+            const action = this.touchActions.get(touch.identifier);
+
+            if (action === 'move') {
                 this.updateJoystick(touch.clientX, touch.clientY, 'move');
-            } else if (touch.identifier === this.aimJoystick.touchId) {
+            } else if (action === 'aim') {
                 this.updateJoystick(touch.clientX, touch.clientY, 'aim');
             }
         }
@@ -440,19 +446,21 @@ export class MobileControls {
     handleTouchEnd(e) {
         for (let i = 0; i < e.changedTouches.length; i++) {
             const touch = e.changedTouches[i];
+            const action = this.touchActions.get(touch.identifier);
 
-            // Check if it was a button touch
-            const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            const btn = target?.closest('.mobile-btn');
-            if (btn) {
-                this.onButtonEnd({ target: btn, preventDefault: () => { } });
-            }
+            if (!action) continue;
 
-            if (touch.identifier === this.moveJoystick.touchId) {
+            if (action.startsWith('btn_')) {
+                const actionName = action.replace('btn_', '');
+                const btn = this.container.querySelector(`.mobile-btn-${actionName}`);
+                if (btn) this.onButtonEnd({ target: btn, preventDefault: () => { } });
+            } else if (action === 'move') {
                 this.onJoystickEnd(touch, 'move');
-            } else if (touch.identifier === this.aimJoystick.touchId) {
+            } else if (action === 'aim') {
                 this.onJoystickEnd(touch, 'aim');
             }
+
+            this.touchActions.delete(touch.identifier);
         }
     }
 
@@ -464,12 +472,28 @@ export class MobileControls {
         state.touchId = touch.identifier;
         state.active = true;
 
-        // Static layout: calculate center from the base element
-        const rect = base.getBoundingClientRect();
-        state.center = {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2
-        };
+        if (type === 'aim') {
+            state.lastX = touch.clientX;
+            state.lastY = touch.clientY;
+            state.deltaX = 0;
+            state.deltaY = 0;
+        }
+
+        if (this.settings.dynamicJoysticks) {
+            // Floating joystick: center it where the touch started
+            state.center = { x: touch.clientX, y: touch.clientY };
+            base.style.left = `${touch.clientX - size / 2}px`;
+            base.style.top = `${touch.clientY - size / 2}px`;
+            base.style.bottom = 'auto'; // Clear possible bottom anchoring
+            base.style.display = 'flex';
+        } else {
+            // Static mode: center is the base's geometric center
+            const rect = base.getBoundingClientRect();
+            state.center = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+        }
 
         state.radius = size / 2;
 
@@ -529,9 +553,33 @@ export class MobileControls {
     }
 
     updateJoystick(touchX, touchY, type) {
-        const state = type === 'move' ? this.moveJoystick : this.aimJoystick;
+        if (type === 'aim') {
+            const state = this.aimJoystick;
+            const dx = touchX - state.lastX;
+            const dy = touchY - state.lastY;
+
+            // Apply swipe delta with sensitivity
+            state.deltaX += dx;
+            state.deltaY += dy;
+
+            state.lastX = touchX;
+            state.lastY = touchY;
+
+            // Update visual knob based on distance from where touch started (for feedback)
+            const visualDx = touchX - state.center.x;
+            const visualDy = touchY - state.center.y;
+            const dist = Math.sqrt(visualDx * visualDx + visualDy * visualDy);
+            const maxDist = state.radius * 0.8;
+
+            const knobX = Math.min(maxDist, Math.max(-maxDist, visualDx * (maxDist / Math.max(dist, 1))));
+            const knobY = Math.min(maxDist, Math.max(-maxDist, visualDy * (maxDist / Math.max(dist, 1))));
+            this.aimJoystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+            return;
+        }
+
+        const state = this.moveJoystick;
         const dx = touchX - state.center.x;
-        const dy = touchY - state.center.y;
+        const dy = touchY - state.center.y; // Corrected from center.x
         const distance = Math.sqrt(dx * dx + dy * dy);
         const maxDist = state.radius * 0.8;
 
@@ -544,22 +592,19 @@ export class MobileControls {
         }
 
         state.x = Math.max(-1, Math.min(1, normX));
-        if (type === 'move') {
-            state.z = Math.max(-1, Math.min(1, normY));
-        } else {
-            state.y = Math.max(-1, Math.min(1, normY));
-        }
+        // Flip Y sign: Drag UP (negative dy) -> negative Z (Forward)
+        state.z = Math.max(-1, Math.min(1, normY));
 
-        const knob = type === 'move' ? this.moveJoystickKnob : this.aimJoystickKnob;
+        const knob = this.moveJoystickKnob;
         const knobX = Math.min(maxDist, Math.max(-maxDist, dx * (maxDist / Math.max(distance, 1))));
         const knobY = Math.min(maxDist, Math.max(-maxDist, dy * (maxDist / Math.max(distance, 1))));
         knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
     }
 
     onButtonStart(e) {
-        e.preventDefault();
+        if (e.preventDefault) e.preventDefault();
         const action = e.target.dataset.action;
-        e.target.style.transform = 'scale(0.9)';
+        e.target.style.background = `rgba(255, 255, 255, 0.3)`; // Brief highlight
 
         switch (action) {
             case 'jump': this.jumpPressed = true; break;
@@ -570,9 +615,9 @@ export class MobileControls {
     }
 
     onButtonEnd(e) {
-        e.preventDefault();
+        if (e.preventDefault) e.preventDefault();
         const action = e.target.dataset.action;
-        e.target.style.transform = 'scale(1)';
+        e.target.style.background = `rgba(255, 255, 255, ${this.settings.opacity})`;
 
         switch (action) {
             case 'jump': this.jumpPressed = false; break;
@@ -591,11 +636,28 @@ export class MobileControls {
 
     getAimDelta() {
         if (!this.aimJoystick.active) return null;
-        // Sensitivity scaling for analog stick
-        const baseSensitivity = 2.58; // Reduced by 14% from 3.0 (total 48.4% reduction from original 5.0)
+
+        // Return accumulated delta and clear for next frame
+        const dx = this.aimJoystick.deltaX;
+        const dy = this.aimJoystick.deltaY;
+
+        this.aimJoystick.deltaX = 0;
+        this.aimJoystick.deltaY = 0;
+
+        if (dx === 0 && dy === 0) return null;
+
+        // Apply sensitivity and acceleration
+        // For swipe, distance moved *is* the delta.
+        // Multiply by a factor to match expected rotation speeds.
+        const sens = 0.005 * this.settings.aimSensitivity;
+
+        // Aim acceleration based on "Swipe Speed"
+        const speed = Math.sqrt(dx * dx + dy * dy);
+        const accel = 1.0 + (speed * 0.05); // Faster swipes move more
+
         return {
-            x: this.aimJoystick.x * baseSensitivity * this.settings.aimSensitivity,
-            y: this.aimJoystick.y * baseSensitivity * this.settings.aimSensitivity
+            x: dx * sens * accel,
+            y: dy * sens * accel
         };
     }
 
