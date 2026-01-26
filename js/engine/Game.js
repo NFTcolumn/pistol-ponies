@@ -439,12 +439,17 @@ export class Game {
             // Get aim from joystick
             const aimDelta = this.mobileControls.getAimDelta();
 
-            if (joystickMove || aimDelta) {
-                inputOverrides = {
-                    movement: joystickMove,
-                    aimDelta: aimDelta
-                };
+            // Handle mobile dash (Store in a variable so it's not consumed twice)
+            const mobileDash = this.mobileControls.getDash();
+            if (mobileDash) {
+                this.localPlayer.isDashing = true;
+                setTimeout(() => { if (this.localPlayer) this.localPlayer.isDashing = false; }, 200);
             }
+            inputOverrides = {
+                movement: joystickMove,
+                aimDelta: aimDelta,
+                dash: mobileDash
+            };
 
             // Show/hide stat buttons based on available skill points
             if (this.localPlayer.skillPoints > 0) {
@@ -460,12 +465,6 @@ export class Game {
                     type: 'allocateStat',
                     stat: statToAllocate
                 });
-            }
-
-            // Handle mobile flick-to-dash
-            if (this.mobileControls.getDash()) {
-                this.localPlayer.isDashing = true;
-                setTimeout(() => { if (this.localPlayer) this.localPlayer.isDashing = false; }, 200);
             }
         }
 
@@ -517,7 +516,7 @@ export class Game {
 
         // Check for dash from keyboard, mobile, or gamepad
         let dashTriggered = !!desktopDash;
-        if (this.mobileControls.enabled && this.mobileControls.getDash()) {
+        if (inputOverrides && inputOverrides.dash) {
             dashTriggered = true;
         }
         if (gamepadDash) {
@@ -640,9 +639,12 @@ export class Game {
     onPlayerKilled(killer, victim, weapon) {
         this.hud.addKill(killer.name, victim.name, weapon);
 
-        // If local player died, play the death sound
+        // If local player died, play the death sound and reset controls
         if (victim.id === this.network.playerId) {
             this.sounds.playDeathSound();
+            if (this.mobileControls.enabled) {
+                this.mobileControls.forceReset();
+            }
         }
     }
     onBulletFired(bullet) {

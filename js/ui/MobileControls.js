@@ -375,6 +375,8 @@ export class MobileControls {
 
         // Prevent browser zoom and scroll
         this.container.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+        this.container.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+        this.container.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
         this.container.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
     }
 
@@ -448,7 +450,12 @@ export class MobileControls {
             const touch = e.changedTouches[i];
             const action = this.touchActions.get(touch.identifier);
 
-            if (!action) continue;
+            if (!action) {
+                // Defensive: ensure if this ID was move/aim stick, we clear it anyway
+                if (touch.identifier === this.moveJoystick.touchId) this.onJoystickEnd(touch, 'move');
+                if (touch.identifier === this.aimJoystick.touchId) this.onJoystickEnd(touch, 'aim');
+                continue;
+            }
 
             if (action.startsWith('btn_')) {
                 const actionName = action.replace('btn_', '');
@@ -594,6 +601,9 @@ export class MobileControls {
         state.x = Math.max(-1, Math.min(1, normX));
         // Flip Y sign: Drag UP (negative dy) -> negative Z (Forward)
         state.z = Math.max(-1, Math.min(1, normY));
+        if (distance > 10) {
+            console.log(`[Move] dy: ${Math.round(dy)}, normY: ${normY.toFixed(2)}, z: ${state.z.toFixed(2)}`);
+        }
 
         const knob = this.moveJoystickKnob;
         const knobX = Math.min(maxDist, Math.max(-maxDist, dx * (maxDist / Math.max(distance, 1))));
@@ -804,6 +814,37 @@ export class MobileControls {
         this.createUI();
         this.setupEventListeners();
         if (this.game.gameState === 'playing') this.show();
+    }
+
+    forceReset() {
+        console.log('[MobileControls] Force resetting all touch state');
+        this.touchActions.clear();
+
+        // Reset movement
+        this.moveJoystick.active = false;
+        this.moveJoystick.touchId = null;
+        this.moveJoystick.x = 0;
+        this.moveJoystick.z = 0;
+        this.moveJoystickKnob.style.transform = 'translate(0, 0)';
+        if (this.settings.dynamicJoysticks) this.moveJoystickBase.style.display = 'none';
+
+        // Reset aiming
+        this.aimJoystick.active = false;
+        this.aimJoystick.touchId = null;
+        this.aimJoystick.x = 0;
+        this.aimJoystick.y = 0;
+        this.aimJoystick.deltaX = 0;
+        this.aimJoystick.deltaY = 0;
+        this.aimJoystickKnob.style.transform = 'translate(0, 0)';
+        if (this.settings.dynamicJoysticks) this.aimJoystickBase.style.display = 'none';
+
+        // Reset inputs
+        this.shootHeld = false;
+        this.jumpPressed = false;
+        this.reloadPressed = false;
+        this.statPressed = null;
+        this.isAutoFiring = false;
+        this.isDashing = false;
     }
 
     destroy() {
