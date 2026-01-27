@@ -49,6 +49,10 @@
 </head>
 
 <body>
+  <button class="btn-fullscreen" id="globalFullscreenBtn">
+    <span>⛶ FULLSCREEN</span>
+  </button>
+
   <!-- Menu Screen -->
   <div id="menu">
     <!-- Main Menu -->
@@ -173,8 +177,12 @@
         <button id="resumeBtn" class="btn-ingame btn-resume">▶️ Resume Game</button>
         <button id="saveGameBtn" class="btn-ingame btn-save">💾 Save Game</button>
         <button id="loadGameBtn" class="btn-ingame btn-load">📂 Load Game</button>
-        <button id="quitGameBtn" class="btn-ingame btn-quit">🚪 Quit to Menu</button>
+        <button id="menuQuitGameBtn" class="btn-ingame btn-quit">🚪 Quit to Menu</button>
       </div>
+
+      <button id="menuFullscreenBtn" class="btn btn-secondary btn-small" style="width: 100%; margin-top: 10px;">
+        ⛶ TOGGLE FULLSCREEN
+      </button>
 
       <p class="save-fee-notice">Save costs ~0.000005 ETH on Base (~1¢)</p>
 

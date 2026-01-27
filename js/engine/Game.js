@@ -12,6 +12,7 @@ import { GamepadController } from '/js/engine/GamepadController.js';
 import { WalletManager } from '/js/wallet/WalletManager.js';
 import { ContractManager } from '/js/wallet/ContractManager.js';
 import { SoundManager } from '/js/effects/SoundManager.js';
+import { FullScreenUtils } from '/js/utils/FullScreenUtils.js';
 
 export class Game {
     constructor() {
@@ -57,6 +58,7 @@ export class Game {
         this.setupMenuEvents();
         this.setupScoreboard();
         this.setupVisibilityHandlers(); // Sleep/wake handling
+        this.setupFullScreen(); // Fullscreen support
 
         // Expose for debugging
         window.game = this;
@@ -99,6 +101,32 @@ export class Game {
 
         // Wallet connection
         this.setupWalletEvents();
+    }
+
+    setupFullScreen() {
+        const globalBtn = document.getElementById('globalFullscreenBtn');
+        const quitBtn = document.getElementById('menuQuitGameBtn');
+        const menuBtn = document.getElementById('menuFullscreenBtn');
+
+        const toggleFS = () => {
+            FullScreenUtils.toggle(document.documentElement);
+            if (globalBtn) {
+                globalBtn.querySelector('span').textContent = FullScreenUtils.isFullscreen() ? '❐ EXIT FULLSCREEN' : '⛶ FULLSCREEN';
+            }
+        };
+
+        if (globalBtn) globalBtn.addEventListener('click', toggleFS);
+        if (menuBtn) menuBtn.addEventListener('click', toggleFS);
+
+        // Prevent double-tap to zoom on mobile
+        let lastTouchTime = 0;
+        document.addEventListener('touchstart', (e) => {
+            const now = Date.now();
+            if (now - lastTouchTime < 300) {
+                e.preventDefault();
+            }
+            lastTouchTime = now;
+        }, { passive: false });
     }
 
     setupWalletEvents() {

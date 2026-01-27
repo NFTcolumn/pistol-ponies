@@ -1,8 +1,8 @@
 {
     "name": "Pistol Ponies",
-    "short_name": "PistolPonies",
+    "short_name": "Pistol Ponies",
     "description": "2D Online Multiplayer FPS Shooter - Play with friends, upgrade skills, and dominate the arena!",
-    "start_url": "/",
+    "start_url": "/game",
     "display": "standalone",
     "background_color": "#bdc3ff",
     "theme_color": "#ff6b9d",
