@@ -57,4 +57,22 @@ export class FullScreenUtils {
             document.msFullscreenElement
         );
     }
+
+    /**
+     * Check if fullscreen is supported by the browser
+     */
+    static isSupported() {
+        return !!(
+            document.documentElement.requestFullscreen ||
+            document.documentElement.webkitRequestFullscreen ||
+            document.documentElement.msRequestFullscreen
+        );
+    }
+
+    /**
+     * Check if app is running in standalone mode (PWA)
+     */
+    static isPWA() {
+        return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
 }

@@ -203,17 +203,18 @@ body {
 
 /* Fullscreen Toggle */
 .btn-fullscreen {
-  position: absolute;
-  top: 20px;
-  right: 20px;
+  position: fixed;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
   padding: 10px 15px;
   font-size: 12px;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.4);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   cursor: pointer;
-  z-index: 1000;
+  z-index: 500;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -226,8 +227,8 @@ body {
 
 @media (max-width: 768px) {
   .btn-fullscreen {
-    top: 10px;
-    right: 10px;
+    left: 10px;
+    /* Closer to edge on mobile */
     padding: 8px 12px;
     font-size: 10px;
   }
@@ -571,7 +572,7 @@ body {
   background: rgba(20, 20, 40, 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  z-index: 200;
+  z-index: 2000;
   display: flex;
   justify-content: center;
   align-items: center;

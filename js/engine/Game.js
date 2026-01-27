@@ -106,8 +106,18 @@ export class Game {
 
     setupFullScreen() {
         const globalBtn = document.getElementById('globalFullscreenBtn');
-        const quitBtn = document.getElementById('menuQuitGameBtn');
         const menuBtn = document.getElementById('menuFullscreenBtn');
+
+        // Check if supported
+        const supported = FullScreenUtils.isSupported();
+        const isPWA = FullScreenUtils.isPWA();
+
+        // If not supported (e.g. iOS Safari) or already in PWA mode, hide buttons
+        if (!supported || isPWA) {
+            if (globalBtn) globalBtn.style.display = 'none';
+            if (menuBtn) menuBtn.style.display = 'none';
+            return;
+        }
 
         const toggleFS = () => {
             FullScreenUtils.toggle(document.documentElement);

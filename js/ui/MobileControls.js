@@ -220,6 +220,7 @@ export class MobileControls {
 
         // Add Pause button separately at the top
         const pauseBtn = document.createElement('div');
+        pauseBtn.className = 'mobile-btn';
         pauseBtn.dataset.action = 'menu';
         pauseBtn.style.cssText = `
             position: absolute;
