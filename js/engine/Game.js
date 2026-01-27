@@ -59,6 +59,7 @@ export class Game {
         this.setupScoreboard();
         this.setupVisibilityHandlers(); // Sleep/wake handling
         this.setupFullScreen(); // Fullscreen support
+        this.setupTracking(); // PWA/Install tracking
 
         // Expose for debugging
         window.game = this;
@@ -127,6 +128,38 @@ export class Game {
             }
             lastTouchTime = now;
         }, { passive: false });
+    }
+
+    setupTracking() {
+        // Track actual installation event
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA was installed');
+            this.reportTracking('pwa_install');
+        });
+
+        // Track if launched as PWA (from home screen)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('utm_source') === 'pwa' || window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('App launched as PWA');
+            this.reportTracking('pwa_launch');
+        }
+    }
+
+    reportTracking(eventType) {
+        // Send to server via network manager if connected, otherwise wait for connection
+        const sendEvent = () => {
+            if (this.network && this.network.connected) {
+                this.network.send({
+                    type: 'tracking',
+                    event: eventType,
+                    timestamp: Date.now()
+                });
+            } else {
+                // Retry in 5 seconds
+                setTimeout(sendEvent, 5000);
+            }
+        };
+        sendEvent();
     }
 
     setupWalletEvents() {
